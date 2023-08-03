@@ -4,6 +4,9 @@ import { contextBridge, ipcRenderer } from "electron";
 
 const electronAPI = {
   openFile: () => ipcRenderer.invoke("dialog:openFile"),
+  encryptPassword: ({username, password } : {username: string, password: string}) => {
+    return ipcRenderer.invoke("encrypt-password", [username, password]);
+  },
   forkUtilityProcess: ({
     username,
     password,

@@ -18,7 +18,7 @@ const EncryptPassword = () => {
 
   const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
-    await window.electronAPI.forkUtilityProcess({username, password})
+    await window.electronAPI.encryptPassword({username, password})
     setUsername("")
     setPassword("")
   };
