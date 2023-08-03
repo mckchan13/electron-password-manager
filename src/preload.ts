@@ -2,7 +2,7 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 import { contextBridge, ipcRenderer } from "electron";
 
-contextBridge.exposeInMainWorld("electronAPI", {
+const electronAPI = {
   openFile: () => ipcRenderer.invoke("dialog:openFile"),
   forkUtilityProcess: ({
     username,
@@ -10,5 +10,18 @@ contextBridge.exposeInMainWorld("electronAPI", {
   }: {
     username: string;
     password: string;
-  }) => ipcRenderer.send("utilityProcess:fork", [username, password]),
-});
+  }) => {
+    console.log("ipcRenderer is being called");
+    return ipcRenderer.invoke("utilityProcess:fork", [username, password]);
+  },
+};
+
+contextBridge.exposeInMainWorld("electronAPI", electronAPI);
+
+declare global {
+  type ElectronMethods = ElectronAPI[keyof ElectronAPI];
+  type ElectronAPI = typeof electronAPI;
+  interface Window {
+    electronAPI: ElectronAPI;
+  }
+}

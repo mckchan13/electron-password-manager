@@ -1,22 +1,12 @@
+import { ipcRenderer } from "electron";
 import React, { useState } from "react";
-
-declare global {
-  interface ElectronAPI {
-    openFile: () => Promise<string>;
-  }
-
-  interface Window {
-    electronAPI: ElectronAPI;
-  }
-}
 
 type InputEvent = React.ChangeEvent<HTMLInputElement>;
 type FormEvent = React.FormEvent<HTMLFormElement>;
 
-const Login = () => {
+const EncryptPassword = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [currentFilePath, setCurrentFilePath] = useState("");
 
   const handleUsername = (e: InputEvent): void => {
     setUsername(e.target.value);
@@ -26,19 +16,16 @@ const Login = () => {
     setPassword(e.target.value);
   };
 
-  const handleSubmit = (e: FormEvent): void => {
+  const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
-    console.log(e);
-  };
-
-  const handleClick = async () => {
-    const filePath = await window.electronAPI.openFile();
-    setCurrentFilePath(filePath);
+    await window.electronAPI.forkUtilityProcess({username, password})
+    setUsername("")
+    setPassword("")
   };
 
   return (
     <div>
-      Please login
+      Encrypt Password
       <form onSubmit={handleSubmit}>
         <div>
           Username:
@@ -48,15 +35,10 @@ const Login = () => {
           Password:
           <input type="text" value={password} onChange={handlePassword} />
         </div>
-        <button>Login</button>
+        <button>Encrypt</button>
       </form>
-      <button onClick={handleClick}>Load File Path</button>
-      <div>
-        Current File Path:{" "}
-        {currentFilePath ? currentFilePath : "No File Loaded"}
-      </div>
     </div>
   );
 };
 
-export default Login;
+export default EncryptPassword;
