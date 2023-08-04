@@ -24,12 +24,12 @@ const EncryptPassword = () => {
   };
 
   return (
-    <div>
+    <div className="flex-wrap text-red-500">
       Encrypt Password
       <form onSubmit={handleSubmit}>
         <div>
           Username:
-          <input type="text" value={username} onChange={handleUsername} />
+          <input className="text-red-600" type="text" value={username} onChange={handleUsername} />
         </div>
         <div>
           Password:
