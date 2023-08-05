@@ -4,8 +4,20 @@ import { contextBridge, ipcRenderer } from "electron";
 
 const electronAPI = {
   openFile: () => ipcRenderer.invoke("dialog:openFile"),
-  encryptPassword: ({username, password } : {username: string, password: string}) => {
-    return ipcRenderer.invoke("encrypt-password", [username, password]);
+  encryptPassword: ({
+    username,
+    password,
+    encryptionKey,
+  }: {
+    username: string;
+    password: string;
+    encryptionKey: string;
+  }) => {
+    return ipcRenderer.invoke("encrypt-password", [
+      username,
+      password,
+      encryptionKey,
+    ]);
   },
   forkUtilityProcess: ({
     username,
@@ -19,12 +31,27 @@ const electronAPI = {
   },
 };
 
+/**
+ * channel = string
+ * 
+ * Renderer/Preload
+ * ElectronAPI
+ * channel : string => args[] (received from the renderer)
+ * 
+ * Main
+ * MainHandlers
+ * ipcMainHandle(channel, args)
+ * 
+ */
+
+
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);
 
 declare global {
-  type ElectronMethods = ElectronAPI[keyof ElectronAPI];
-  type ElectronAPI = typeof electronAPI;
-  interface Window {
+  export type HandlerArguments = Parameters<ElectronMethods>[0]
+  export type ElectronAPI = typeof electronAPI;
+  export type ElectronMethods = ElectronAPI[keyof ElectronAPI];
+  export interface Window {
     electronAPI: ElectronAPI;
   }
 }
