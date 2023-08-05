@@ -38,6 +38,8 @@ const createWindow = (): void => {
 // app.on('ready', createWindow);
 
 app.whenReady().then(() => {
+  console.log(app.getPath("userData"))
+  console.log(app.getAppPath())
   ipcMain.handle("dialog:openFile", handleFileOpen);
   ipcMain.handle("encrypt-password", handleEncryptPassword);
   console.log("Starting database")
