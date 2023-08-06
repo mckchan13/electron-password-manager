@@ -7,16 +7,16 @@ const electronAPI = {
   encryptPassword: ({
     username,
     password,
-    encryptionKey,
+    secretKey,
   }: {
     username: string;
     password: string;
-    encryptionKey: string;
+    secretKey: string;
   }) => {
     return ipcRenderer.invoke("encrypt-password", [
       username,
       password,
-      encryptionKey,
+      secretKey,
     ]);
   },
   forkUtilityProcess: ({

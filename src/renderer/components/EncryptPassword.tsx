@@ -6,7 +6,7 @@ type FormEvent = React.FormEvent<HTMLFormElement>;
 const EncryptPassword = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [encryptionKey, setEncryptionKey] = useState("");
+  const [secretKey, setSecretKey] = useState("");
   const [encryptedPassword, setEncryptedPassword] = useState();
 
   const handleUsername = (e: InputEvent): void => {
@@ -17,20 +17,28 @@ const EncryptPassword = () => {
     setPassword(e.target.value);
   };
 
-  const handleEncryptionKey = (e: InputEvent): void => {
-    setEncryptionKey(e.target.value);
+  const handleSecretKey = (e: InputEvent): void => {
+    setSecretKey(e.target.value);
   };
 
   const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
-    const hash = await window.electronAPI.encryptPassword({
+
+    if (!username || !password || !secretKey) {
+      console.error("All fields must be filled out");
+      return;
+    }
+
+    const encrypted = await window.electronAPI.encryptPassword({
       username,
       password,
-      encryptionKey,
+      secretKey,
     });
+
     setUsername("");
     setPassword("");
-    setEncryptedPassword(hash);
+    setSecretKey("");
+    setEncryptedPassword(encrypted);
   };
 
   return (
@@ -56,15 +64,17 @@ const EncryptPassword = () => {
           />
         </div>
         <div>
-          Encryption Key:
+          Secret Key:
           <input
             className="border rounded-md"
             type="text"
-            value={encryptionKey}
-            onChange={handleEncryptionKey}
+            value={secretKey}
+            onChange={handleSecretKey}
           />
         </div>
-        <button>Encrypt</button>
+        <button className="border border-black bg-slate-300 rounded-md px-3 py-1">
+          Encrypt
+        </button>
       </form>
       <div>
         Encrypted Password: {encryptedPassword ?? "No password encrypted yet"}

@@ -5,7 +5,6 @@
   "description": "My Electron application description",
   "main": ".vite/build/index.js",
   "scripts": {
-    "dev": "NODE_ENV=DEVELOPMENT electron-forge start",
     "start": "electron-forge start",
     "build:sql": "npm install --runtime=electron --target=25.3.2 --dist-url=https://electronjs.org/headers && npm install",
     "package": "electron-forge package",

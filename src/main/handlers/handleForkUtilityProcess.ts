@@ -10,7 +10,7 @@ const handleForkUtilityProcess = (
   // child process to encrypt passwords
   console.log("handleForkUtilityProcess is being invoked. Data: ", data);
   console.log(__dirname)
-  const { port1, port2 } = new MessageChannelMain();
+  const { port1 } = new MessageChannelMain();
   const [username, password] = data;
   const child = utilityProcess.fork(
     path.resolve(__dirname, "encryptPassword.js"),
