@@ -31,20 +31,6 @@ const electronAPI = {
   },
 };
 
-/**
- * channel = string
- * 
- * Renderer/Preload
- * ElectronAPI
- * channel : string => args[] (received from the renderer)
- * 
- * Main
- * MainHandlers
- * ipcMainHandle(channel, args)
- * 
- */
-
-
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);
 
 declare global {
