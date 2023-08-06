@@ -3,7 +3,7 @@
   "productName": "electron-password-manager",
   "version": "1.0.0",
   "description": "My Electron application description",
-  "main": ".webpack/main",
+  "main": ".vite/build/index.js",
   "scripts": {
     "dev": "NODE_ENV=DEV electron-forge start",
     "start": "electron-forge start",
@@ -25,12 +25,14 @@
     "@electron-forge/maker-squirrel": "^6.2.1",
     "@electron-forge/maker-zip": "^6.2.1",
     "@electron-forge/plugin-auto-unpack-natives": "^6.2.1",
+    "@electron-forge/plugin-vite": "^6.2.1",
     "@electron-forge/plugin-webpack": "^6.2.1",
     "@types/react": "^18.2.18",
     "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "@vercel/webpack-asset-relocator-loader": "^1.7.3",
+    "@vitejs/plugin-react": "^4.0.4",
     "autoprefixer": "^10.4.14",
     "css-loader": "^6.8.1",
     "electron": "25.3.2",
@@ -44,7 +46,8 @@
     "tailwindcss": "^3.3.3",
     "ts-loader": "^9.4.4",
     "ts-node": "^10.9.1",
-    "typescript": "~4.5.4"
+    "typescript": "~4.5.4",
+    "vite": "^4.4.8"
   },
   "dependencies": {
     "@types/bcrypt": "^5.0.0",
