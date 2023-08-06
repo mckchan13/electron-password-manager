@@ -1,30 +1,40 @@
 import { app } from "electron";
 import sqlite3 from "sqlite3";
+console.log(process.env.NODE_ENV);
 
 export class SqlDatabase {
   static #isInternalConstructing = false;
+
   static #instance: SqlDatabase;
+
   private db: sqlite3.Database;
-  public constructor(public userSpecifiedDbPath?: string) {
+
+  private constructor() {
     if (!SqlDatabase.#isInternalConstructing) {
       throw new TypeError(
         "Private SqlDatabase constructor is not constructable"
       );
     }
+
     SqlDatabase.#isInternalConstructing = false;
-    if (!userSpecifiedDbPath) {
-      console.log(
-        `No database path specified, starting in memory database. 
-        All data will be lost when application is closed.`
-      );
+
+    if (process.env.NODE_ENV === "development") {
+      console.log(`Starting in-memory database`);
       this.db = new sqlite3.Database(":memory:");
       return;
     }
-    this.userSpecifiedDbPath = userSpecifiedDbPath;
-    this.db = new sqlite3.Database(`${app.getPath("userData")}/userdb/app.db`);
+
+    // try to load existing database file
+    // TODO: find a way to get electron to write a new folder to either
+    // "userData" or "appData" paths
+
+    this.db = new sqlite3.Database(`${app.getPath("userData")}/app.db`);
+    console.log(`Loading database file at ${app.getPath("userData")}/app.db`);
+    return;
   }
 
   public static get instance(): SqlDatabase {
+    // To prevent instantiation of separate database instances
     if (!this.#instance) {
       SqlDatabase.#isInternalConstructing = true;
       return new SqlDatabase();
@@ -38,7 +48,7 @@ export class SqlDatabase {
 
     db.serialize(() => {
       db.run(
-        `CREATE TABLE passwords (
+        `CREATE TABLE IF NOT EXISTS passwords (
           descriptor TEXT NOT NULL, 
           password TEXT NOT NULL
           )`

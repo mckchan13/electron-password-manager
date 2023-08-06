@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import handleFileOpen from "./main/handlers/handleFileOpen";
-import { handleEncryptPassword} from "./main/handlers/handleEncryptPassword"
+import { handleEncryptPassword } from "./main/handlers/handleEncryptPassword";
 import { SqlDatabase } from "./main/db";
 
 // import handleForkUtilityProcess from './main/handlers/handleForkUtilityProcess';
@@ -38,13 +38,12 @@ const createWindow = (): void => {
 // app.on('ready', createWindow);
 
 app.whenReady().then(() => {
-  console.log(app.getPath("userData"))
-  console.log(app.getAppPath())
+  console.log(app.getPath("userData"));
+  console.log(app.getAppPath());
   ipcMain.handle("dialog:openFile", handleFileOpen);
   ipcMain.handle("encrypt-password", handleEncryptPassword);
-  console.log("Starting database")
   SqlDatabase.instance.initDb();
-  console.log("App is ready... creating window")
+  console.log("App is ready... creating window");
   createWindow();
 });
 
@@ -53,7 +52,7 @@ app.whenReady().then(() => {
 // explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
-    SqlDatabase.instance.closeDb()
+    SqlDatabase.instance.closeDb();
     app.quit();
   }
 });
