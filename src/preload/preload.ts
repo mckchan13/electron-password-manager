@@ -7,16 +7,16 @@ const electronAPI = {
   encryptPassword: ({
     username,
     password,
-    encryptionKey,
+    secretKey,
   }: {
     username: string;
     password: string;
-    encryptionKey: string;
+    secretKey: string;
   }) => {
     return ipcRenderer.invoke("encrypt-password", [
       username,
       password,
-      encryptionKey,
+      secretKey,
     ]);
   },
   forkUtilityProcess: ({
@@ -30,20 +30,6 @@ const electronAPI = {
     return ipcRenderer.invoke("utilityProcess:fork", [username, password]);
   },
 };
-
-/**
- * channel = string
- * 
- * Renderer/Preload
- * ElectronAPI
- * channel : string => args[] (received from the renderer)
- * 
- * Main
- * MainHandlers
- * ipcMainHandle(channel, args)
- * 
- */
-
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);
 

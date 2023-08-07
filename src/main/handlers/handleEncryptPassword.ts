@@ -5,13 +5,12 @@ export async function handleEncryptPassword(
   data: string[]
 ) {
 
-  const [username, password, encryptionKey] = data
+  const [__, password, secretKey] = data
 
-  const cryptr = new Cryptr(encryptionKey);
+  const cryptr = new Cryptr(secretKey);
   const encryptedString = cryptr.encrypt(password);
   const decryptedString = cryptr.decrypt(encryptedString);
+  console.log(decryptedString);
 
-  console.log("EncryptedString: ", encryptedString)
-  console.log("DecryptedString: ", decryptedString)
-
+  return encryptedString;
 }

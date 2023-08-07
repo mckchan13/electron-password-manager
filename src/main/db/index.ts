@@ -1,6 +1,5 @@
 import { app } from "electron";
 import sqlite3 from "sqlite3";
-console.log(process.env.NODE_ENV);
 
 export class SqlDatabase {
   static #isInternalConstructing = false;
@@ -49,16 +48,16 @@ export class SqlDatabase {
     db.serialize(() => {
       db.run(
         `CREATE TABLE IF NOT EXISTS passwords (
-          descriptor TEXT NOT NULL, 
+          descriptor TEXT NOT NULL UNIQUE, 
           password TEXT NOT NULL
-          )`
+          );`
       );
 
       console.log("Table created, now preparing insert statement...");
       const stmt = db.prepare(`INSERT INTO passwords VALUES ($desc, $pass);`);
 
       for (let i = 0; i < 10; i++) {
-        stmt.run(i, i);
+        stmt.run(i, String.fromCharCode('a'.charCodeAt(0) + i));
       }
 
       console.log("Finalizing statement...");

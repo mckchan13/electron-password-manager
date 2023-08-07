@@ -1,6 +1,7 @@
-import EncryptPassword from "./components/EncryptPassword";
+import React from "react";
 import { createRoot } from "react-dom/client";
 import NavBar from "./components/NavBar";
+import EncryptPassword from "./components/EncryptPassword";
 
 const rootElement = document.getElementById("root") as HTMLElement;
 const root = createRoot(rootElement);
@@ -8,7 +9,7 @@ const root = createRoot(rootElement);
 const App = () => {
   return (
     <div>
-      <NavBar/>
+      <NavBar />
       <EncryptPassword />
     </div>
   );
