@@ -16,7 +16,7 @@ export class SqlDatabase {
     }
 
     SqlDatabase.#isInternalConstructing = false;
-
+    console.log("SqlDatabase instance is constructing");
     if (process.env.NODE_ENV === "development") {
       console.log(`Starting in-memory database`);
       this.db = new sqlite3.Database(":memory:");
@@ -26,23 +26,25 @@ export class SqlDatabase {
     // try to load existing database file
     // TODO: find a way to get electron to write a new folder to either
     // "userData" or "appData" paths
-
-    this.db = new sqlite3.Database(`${app.getPath("userData")}/app.db`);
-    console.log(`Loading database file at ${app.getPath("userData")}/app.db`);
+    const userDataPath = app.getPath("userData");
+    console.log(`Loading database file at ${userDataPath}/app.db`);
+    this.db = new sqlite3.Database(`${userDataPath}/app.db`);
     return;
   }
 
   public static get instance(): SqlDatabase {
     // To prevent instantiation of separate database instances
+    console.log("Getting #instance:", this.#instance);
     if (!this.#instance) {
       SqlDatabase.#isInternalConstructing = true;
-      return new SqlDatabase();
+      this.#instance = new SqlDatabase();
     }
 
     return this.#instance;
   }
 
   public initDb(): void {
+    console.log("Initalizing SQLite3 Database...");
     const db = this.db;
 
     db.serialize(() => {
@@ -57,7 +59,7 @@ export class SqlDatabase {
       const stmt = db.prepare(`INSERT INTO passwords VALUES ($desc, $pass);`);
 
       for (let i = 0; i < 10; i++) {
-        stmt.run(i, String.fromCharCode('a'.charCodeAt(0) + i));
+        stmt.run(i, String.fromCharCode("a".charCodeAt(0) + i));
       }
 
       console.log("Finalizing statement...");

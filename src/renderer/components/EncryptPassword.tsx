@@ -42,31 +42,31 @@ const EncryptPassword = () => {
   };
 
   return (
-    <div className="flex-wrap">
+    <div className="flex-col">
       Encrypt Password
       <form onSubmit={handleSubmit}>
-        <div>
+        <div className="flex-1 mx-2 py-3">
           Username:
           <input
-            className="text-red-600 border-green-500 border"
+            className="border border-slate-500 rounded-md"
             type="text"
             value={username}
             onChange={handleUsername}
           />
         </div>
-        <div>
+        <div className="flex-1 mx-2 py-3">
           Password:
           <input
-            className="border rounded-md"
+            className="border border-slate-500 rounded-md"
             type="text"
             value={password}
             onChange={handlePassword}
           />
         </div>
-        <div>
+        <div className="flex-1 mx-2 py-3">
           Secret Key:
           <input
-            className="border rounded-md"
+            className="border border-slate-500 rounded-md"
             type="text"
             value={secretKey}
             onChange={handleSecretKey}

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import Cryptr from 'cryptr';
 
 export async function handleEncryptPassword(

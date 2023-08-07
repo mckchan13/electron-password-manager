@@ -1,7 +1,7 @@
-import path from 'path'
+import path from "path";
 import { app, BrowserWindow, ipcMain } from "electron";
 import { SqlDatabase } from "./db";
-import handleFileOpen from "./handlers/handleFileOpen";
+import { handleFileOpen } from "./handlers/handleFileOpen";
 import { handleEncryptPassword } from "./handlers/handleEncryptPassword";
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
@@ -18,15 +18,18 @@ const createWindow = (): void => {
     height: 768,
     width: 1024,
     webPreferences: {
-      preload: path.join(__dirname, '../build/preload.js'),
+      preload: path.join(__dirname, "../build/preload.js"),
     },
   });
 
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    console.log("Starting app in development mode");
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
-    mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+    mainWindow.loadFile(
+      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
+    );
   }
 
   // Open the DevTools.
@@ -42,7 +45,7 @@ app.whenReady().then(() => {
   ipcMain.handle("dialog:openFile", handleFileOpen);
   ipcMain.handle("encrypt-password", handleEncryptPassword);
   SqlDatabase.instance.initDb();
-  console.log("App is ready... creating window");
+  console.log("App is ready... creating main window");
   createWindow();
 });
 
