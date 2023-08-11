@@ -1,6 +1,6 @@
-import React from "react";
+import { ReactElement } from "react";
 
-const NavBar = (): React.ReactElement => {
+const NavBar = (): ReactElement => {
   return (
     <nav>
       <ul className="flex gap-2 py-3 bg-slate-500">
