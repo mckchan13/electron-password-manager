@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ReactElement } from "react";
 import { createRoot } from "react-dom/client";
 import NavBar from "./components/NavBar";
 import EncryptPassword from "./components/EncryptPassword";
@@ -6,7 +6,7 @@ import EncryptPassword from "./components/EncryptPassword";
 const rootElement = document.getElementById("root") as HTMLElement;
 const root = createRoot(rootElement);
 
-const App = () => {
+const App = (): ReactElement => {
   return (
     <div>
       <NavBar />

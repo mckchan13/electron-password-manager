@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { ReactElement, useState } from "react";
 
 type InputEvent = React.ChangeEvent<HTMLInputElement>;
 type FormEvent = React.FormEvent<HTMLFormElement>;
 
-const EncryptPassword = () => {
+const EncryptPassword = (): ReactElement => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [secretKey, setSecretKey] = useState("");

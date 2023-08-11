@@ -1,8 +1,7 @@
 import path from "path";
 import { app, BrowserWindow, ipcMain } from "electron";
 import { SqlDatabase } from "./db";
-import { handleFileOpen } from "./handlers/handleFileOpen";
-import { handleEncryptPassword } from "./handlers/handleEncryptPassword";
+import { handleFileOpen, handleEncryptPassword } from "./handlers";
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
