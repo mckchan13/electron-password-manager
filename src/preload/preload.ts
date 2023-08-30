@@ -25,17 +25,17 @@ const electronAPI = {
   }: {
     username: string;
     password: string;
-  }) => {
-    return ipcRenderer.invoke("utilityProcess:fork", [username, password]);
-  },
-} as const
+  }) => ipcRenderer.invoke("utilityProcess:fork", [username, password]),
+  login: ({ username, password }: { username: string; password: string }) =>
+    ipcRenderer.invoke("user-login", [username, password]),
+} as const;
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);
 
 declare global {
   export type ElectronAPI = typeof electronAPI;
   export type ElectronMethods = (typeof electronAPI)[keyof typeof electronAPI];
-  export type HandlerArguments = Parameters<ElectronMethods>[0]
+  export type HandlerArguments = Parameters<ElectronMethods>[0];
   export interface Window {
     electronAPI: ElectronAPI;
   }

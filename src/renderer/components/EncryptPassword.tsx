@@ -4,10 +4,10 @@ type InputEvent = React.ChangeEvent<HTMLInputElement>;
 type FormEvent = React.FormEvent<HTMLFormElement>;
 
 const EncryptPassword = (): ReactElement => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [secretKey, setSecretKey] = useState("");
-  const [encryptedPassword, setEncryptedPassword] = useState();
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [secretKey, setSecretKey] = useState<string>("");
+  const [encryptedPassword, setEncryptedPassword] = useState<string>();
 
   const handleUsername = (e: InputEvent): void => {
     setUsername(e.target.value);

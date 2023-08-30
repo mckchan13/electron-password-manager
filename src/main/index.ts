@@ -1,7 +1,13 @@
 import path from "path";
-import { app, BrowserWindow, ipcMain } from "electron";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  MessageChannelMain,
+  utilityProcess,
+} from "electron";
 import { SqlDatabase } from "./db";
-import { handleFileOpen, handleEncryptPassword } from "./handlers";
+import { handleFileOpen, handleEncryptPassword, handleLogin } from "./handlers";
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -43,8 +49,11 @@ const createWindow = (): void => {
 app.whenReady().then(() => {
   ipcMain.handle("dialog:openFile", handleFileOpen);
   ipcMain.handle("encrypt-password", handleEncryptPassword);
+  ipcMain.handle("login", handleLogin);
   SqlDatabase.instance.initDb();
   console.log("App is ready... creating main window");
+  const port1 = forkUtilityProcess("/child.js");
+
   createWindow();
 });
 
@@ -68,3 +77,41 @@ app.on("activate", () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
+
+function forkUtilityProcess(scriptPath: string): Electron.MessagePortMain {
+  // Main process
+  const { port1, port2 } = new MessageChannelMain();
+
+  const scriptAbsolutePath = path.join(__dirname, scriptPath);
+
+  const child = utilityProcess.fork(scriptAbsolutePath, [], {
+    stdio: "pipe",
+  });
+
+  console.log(
+    `Forking utility process... running script at ${path.join(
+      __dirname,
+      scriptPath
+    )}\nSetting up event handlers for child process`
+  );
+
+  child.on("exit", () => {
+    console.log(
+      "[Child process][Exit Event detected] Child process is exiting."
+    );
+  });
+
+  child.stdout?.on("data", (data) => {
+    console.log(`[Child Process][stdout]:${data}`);
+  });
+
+  child.postMessage({ message: "hello" }, [port2]);
+
+  port1.on("message", ({ data }) => {
+    console.log(`port1 received message ${data.message}`);
+  });
+
+  port1.start();
+
+  return port1;
+}

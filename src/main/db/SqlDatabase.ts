@@ -11,7 +11,7 @@ export class SqlDatabase {
   private constructor() {
     if (!SqlDatabase.#isInternalConstructing) {
       throw new TypeError(
-        "Private SqlDatabase constructor is not constructable"
+        "Private SqlDatabase constructor is not constructable",
       );
     }
 
@@ -39,7 +39,7 @@ export class SqlDatabase {
     if (!this.#instance) {
       SqlDatabase.#isInternalConstructing = true;
       console.log(
-        "No existing database instance, calling SqlDatabase constructor"
+        "No existing database instance, calling SqlDatabase constructor",
       );
       this.#instance = new SqlDatabase();
     }
@@ -57,7 +57,7 @@ export class SqlDatabase {
         `CREATE TABLE IF NOT EXISTS passwords (
           descriptor TEXT NOT NULL UNIQUE, 
           password TEXT NOT NULL
-          );`
+          );`,
       );
 
       console.log("Table created, now preparing insert statement...");
@@ -77,7 +77,7 @@ export class SqlDatabase {
             console.error(err);
           }
           console.log(row);
-        }
+        },
       );
     });
   }
