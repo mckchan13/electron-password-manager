@@ -5,9 +5,14 @@ import {
   ipcMain,
   MessageChannelMain,
   utilityProcess,
+  MessagePortMain,
+  IpcMainInvokeEvent,
+  UtilityProcess,
 } from "electron";
 import { SqlDatabase } from "./db";
 import { handleFileOpen, handleEncryptPassword, handleLogin } from "./handlers";
+
+// type MessagePortMain = Electron.MessagePortMain
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -17,7 +22,7 @@ if (require("electron-squirrel-startup")) {
   app.quit();
 }
 
-const createWindow = (): void => {
+const createWindow = async (): Promise<void> => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     height: 768,
@@ -30,9 +35,9 @@ const createWindow = (): void => {
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     console.log("Starting app in development mode");
-    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+    await mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
-    mainWindow.loadFile(
+    await mainWindow.loadFile(
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
     );
   }
@@ -46,15 +51,31 @@ const createWindow = (): void => {
 // Some APIs can only be used after this event occurs.
 // app.on('ready', createWindow);
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   ipcMain.handle("dialog:openFile", handleFileOpen);
   ipcMain.handle("encrypt-password", handleEncryptPassword);
+  ipcMain.handle(
+    "encrypt-password-child",
+    async (event: IpcMainInvokeEvent, data: string[]): Promise<void> => {
+      const [port1, port2, child] = await forkUtilityProcess("/child.js");
+      const promisedData = new Promise((resolve, reject) => {
+        port1.once("message", (event) => {
+          // prepare an event handler such that as soon as
+          // the child receives the port
+          // child will execute the encryption/decryption
+          // once the message is returned with the data
+          // @return resolve(event.data)
+        });
+      });
+      child.postMessage({ message: "port" }, [port2]);
+      port1.start();
+
+      // @return promisedData that will resolve to the data from child on the above "once" handler, the above
+    }
+  );
   ipcMain.handle("login", handleLogin);
   SqlDatabase.instance.initDb();
-  console.log("App is ready... creating main window");
-  const port1 = forkUtilityProcess("/child.js");
-
-  createWindow();
+  await createWindow();
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -78,7 +99,9 @@ app.on("activate", () => {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
 
-function forkUtilityProcess(scriptPath: string): Electron.MessagePortMain {
+async function forkUtilityProcess(
+  scriptPath: string
+): Promise<[MessagePortMain, MessagePortMain, UtilityProcess]> {
   // Main process
   const { port1, port2 } = new MessageChannelMain();
 
@@ -89,7 +112,7 @@ function forkUtilityProcess(scriptPath: string): Electron.MessagePortMain {
   });
 
   console.log(
-    `Forking utility process... running script at ${path.join(
+    `Forking utility process ${child.pid} at ${path.join(
       __dirname,
       scriptPath
     )}\nSetting up event handlers for child process`
@@ -97,21 +120,20 @@ function forkUtilityProcess(scriptPath: string): Electron.MessagePortMain {
 
   child.on("exit", () => {
     console.log(
-      "[Child process][Exit Event detected] Child process is exiting."
+      `[Child process][Exit Event detected] Child process ${child.pid} is exiting.`
     );
   });
 
   child.stdout?.on("data", (data) => {
     console.log(`[Child Process][stdout]:${data}`);
+    console.log(`[Child Process][pid]:${child.pid}`);
   });
 
-  child.postMessage({ message: "hello" }, [port2]);
-
   port1.on("message", ({ data }) => {
-    console.log(`port1 received message ${data.message}`);
+    console.log(`port1 received message ${data.message} from ${child.pid}`);
   });
 
   port1.start();
 
-  return port1;
+  return [port1, port2, child];
 }
