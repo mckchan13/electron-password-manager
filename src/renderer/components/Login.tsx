@@ -17,6 +17,9 @@ const Login = (): ReactElement => {
 
   const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
+    await window.electronAPI.login({ username, password });
+    setUsername("");
+    setPassword("");
   };
 
   return (

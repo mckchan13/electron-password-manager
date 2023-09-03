@@ -30,6 +30,11 @@ const config: ForgeConfig = {
             config: "vite.main.config.ts",
           },
           {
+            // `entry` is just an alias for `build.lib.entry` in the corresponding file of `config`.
+            entry: "src/main/child/child.ts",
+            config: "vite.child.config.ts",
+          },
+          {
             entry: "src/preload/preload.ts",
             config: "vite.preload.config.ts",
           },
