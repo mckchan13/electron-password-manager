@@ -8,13 +8,13 @@ import {
   MessagePortMain,
   UtilityProcess,
 } from "electron";
-import { SqlDatabase } from "./db";
 import { handleFileOpen, handleEncryptPassword, handleLogin } from "./handlers";
-
-// type MessagePortMain = Electron.MessagePortMain
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
+
+// Instantiate an array to house any spawned child processes
+const childProcesses: UtilityProcess[] = [];
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
@@ -38,7 +38,11 @@ app.whenReady().then(async () => {
 // explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
-    SqlDatabase.instance.closeDb();
+    // Gracefully exit any child processes running
+    for (const childProcess of childProcesses) {
+      childProcess.kill();
+    }
+
     app.quit();
   }
 });
@@ -51,15 +55,21 @@ app.on("activate", () => {
   }
 });
 
+// In case the child process unexpectedly quit, log details to console for debugging
+app.on("child-process-gone", (_, details) => {
+  console.log(`Child Process unexpectedly quit:`);
+  console.log(details);
+});
+
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
 
 async function main(): Promise<void> {
   const mainWindow = await createMainWindow();
 
-  const child = await forkUtilityProcess("./child.js");
+  const child = forkUtilityProcess("./child.js");
 
-  const [port1, port2] = createPorts();
+  const [port1, port2] = createMessagePorts();
 
   // setup handler to output any received data from port2
   port1.on("message", (event) => {
@@ -76,6 +86,8 @@ async function main(): Promise<void> {
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
+
+  console.log(`App ${app.name} is ready and starting.`);
 }
 
 async function createMainWindow(): Promise<BrowserWindow> {
@@ -101,7 +113,7 @@ async function createMainWindow(): Promise<BrowserWindow> {
   return mainWindow;
 }
 
-async function forkUtilityProcess(scriptPath: string): Promise<UtilityProcess> {
+function forkUtilityProcess(scriptPath: string): UtilityProcess {
   const scriptAbsolutePath = path.join(__dirname, scriptPath);
 
   const child = utilityProcess.fork(scriptAbsolutePath, [], {
@@ -109,13 +121,24 @@ async function forkUtilityProcess(scriptPath: string): Promise<UtilityProcess> {
     serviceName: "child-utility-process",
   });
 
-  child.on("spawn", () => {
+  // setup listener for parent to receive messages from child process
+  child.on("message", (event) => {
+    console.log(`[Message received from Child Process] ${event.message}`);
+  });
+
+  // setup listener to log when the child process has spawned
+  child.once("spawn", () => {
+    // when child process has spawned, the stdout property should not be null
     child.stdout?.on("data", (data) => {
       console.log(`[Child Process][stdout]:${data}`);
     });
 
+    child.stderr?.on("data", (data) => {
+      console.log(`[Child Process][stderr]:${data}`);
+    });
+
     console.log(
-      `[Child process][Spawn Event detected] Forking utility process ${
+      `[Child process][Spawn Event fired] Forking utility process ${
         child.pid
       } at ${path.join(
         __dirname,
@@ -124,16 +147,14 @@ async function forkUtilityProcess(scriptPath: string): Promise<UtilityProcess> {
     );
   });
 
-  child.on("exit", () => {
-    console.log(
-      `[Child process][Exit Event detected] Child process ${child.pid} is exiting.`
-    );
-  });
+  // make any child processes available in outer scope so
+  // that they may be terminated gracefully when app quits
+  childProcesses.push(child);
 
   return child;
 }
 
-function createPorts(): MessagePortMain[] {
+function createMessagePorts(): MessagePortMain[] {
   const { port1, port2 } = new MessageChannelMain();
 
   return [port1, port2];
