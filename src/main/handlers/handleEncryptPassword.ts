@@ -6,10 +6,16 @@ export async function handleEncryptPassword(
 ) {
   const [, password, secretKey] = data;
 
-  const cryptr = new Cryptr(secretKey);
-  const encryptedString = cryptr.encrypt(password);
-  const decryptedString = cryptr.decrypt(encryptedString);
-  console.log(decryptedString);
+  const encryptr = new Cryptr(secretKey);
+  const encryptedString = encryptr.encrypt(password);
+  console.log(`Encrypting from password => hash: ${password} => ${encryptedString}`);
+  
+  const decryptr = new Cryptr(secretKey)
+  const decryptedString = decryptr.decrypt(encryptedString);
+  console.log(`Decrypting from hash => password: ${encryptedString} => ${decryptedString}`);
+
+  console.log(password === decryptedString)
+
 
   return encryptedString;
 }

@@ -1,4 +1,5 @@
 import sqlite3, { RunResult } from "sqlite3";
+import * as cryptr from "../lib/cryptr"
 
 type PasswordEntry = {
   id?: number;
@@ -93,7 +94,7 @@ export class SqlDatabase {
     return rows;
   }
 
-  public addPassword(name: string, password: string, descriptor: string): void {
+  public addPassword(name: string, password: string, descriptor: string, secret: string): void {
     const db = this.db;
     const stmt = db.prepare(
       `INSERT INTO passwords VALUES ($name, $pass, $desc);`,
@@ -105,7 +106,9 @@ export class SqlDatabase {
       }
     );
 
-    stmt.run([name, password, descriptor], (_: RunResult, error: Error) => {
+    const encrypted = cryptr.encrypt(password, secret)
+
+    stmt.run([name, encrypted, descriptor], (_: RunResult, error: Error) => {
       if (error) {
         console.error(error);
         return;

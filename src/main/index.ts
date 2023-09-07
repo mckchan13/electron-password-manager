@@ -8,6 +8,7 @@ import {
   MessagePortMain,
   UtilityProcess,
 } from "electron";
+
 import { handleFileOpen, handleEncryptPassword, handleLogin } from "./handlers";
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
@@ -30,7 +31,7 @@ app.whenReady().then(async () => {
   ipcMain.handle("dialog:openFile", handleFileOpen);
   ipcMain.handle("encrypt-password", handleEncryptPassword);
   ipcMain.handle("login", handleLogin);
-  await main();
+  main();
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -38,12 +39,14 @@ app.whenReady().then(async () => {
 // explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
-    // Gracefully exit any child processes running
-    for (const childProcess of childProcesses) {
-      childProcess.kill();
-    }
-
     app.quit();
+  }
+});
+
+app.on("before-quit", () => {
+  // Gracefully exit any child processes running
+  for (const childProcess of childProcesses) {
+    childProcess.kill();
   }
 });
 
@@ -64,8 +67,8 @@ app.on("child-process-gone", (_, details) => {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
 
-async function main(): Promise<void> {
-  const mainWindow = await createMainWindow();
+function main(): void {
+  const mainWindow = createMainWindow();
 
   const child = forkUtilityProcess("./child.js");
 
@@ -77,7 +80,7 @@ async function main(): Promise<void> {
   });
 
   // Send the port to child process
-  child.postMessage({ message: "sending port" }, [port2]);
+  child.postMessage("port", [port2]);
 
   // Send a port to the renderer process
   mainWindow.webContents.postMessage("main-world-port", null, [port1]);
@@ -90,7 +93,7 @@ async function main(): Promise<void> {
   console.log(`App ${app.name} is ready and starting.`);
 }
 
-async function createMainWindow(): Promise<BrowserWindow> {
+function createMainWindow(): BrowserWindow {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     height: 768,
@@ -103,9 +106,9 @@ async function createMainWindow(): Promise<BrowserWindow> {
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     console.log("Starting app in development mode");
-    await mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
-    await mainWindow.loadFile(
+    mainWindow.loadFile(
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`)
     );
   }
