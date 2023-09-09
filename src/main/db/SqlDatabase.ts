@@ -1,7 +1,7 @@
 import sqlite3, { RunResult } from "sqlite3";
-import * as cryptr from "../lib/cryptr"
+import * as cryptr from "../lib/cryptr";
 
-type PasswordEntry = {
+export type PasswordEntry = {
   id?: number;
   name: string;
   password: string;
@@ -61,29 +61,33 @@ export class SqlDatabase {
     return this.#instance;
   }
 
-  public getAllPasswords(): PasswordEntry[] {
+  public async getAllPasswords(): Promise<PasswordEntry[]> {
+    console.log(`executing SqlDatabase.getAllPasswords`)
     const db = this.db;
     const rows: PasswordEntry[] = [];
     db.each(
       "SELECT rowid AS id, descriptor, password FROM passwords",
       (err, row: PasswordEntry) => {
         if (err) {
-          console.error(err);
+          console.error("error", err);
         }
+        console.log("here", row)
         rows.push(row);
       }
     );
 
+    console.log(rows)
+
     return rows;
   }
 
-  public getPassword(id: number): PasswordEntry[] {
+  public async getPassword(id: number): Promise<PasswordEntry[]> {
     const rows: PasswordEntry[] = [];
     const db = this.db;
     db.get(
       `SELECT id, name, password, descriptor FROM passwords WHERE id = ?`,
       id,
-      (error : Error, row: PasswordEntry) => {
+      (error: Error, row: PasswordEntry) => {
         if (error) {
           console.error(error.message);
           return;
@@ -94,7 +98,12 @@ export class SqlDatabase {
     return rows;
   }
 
-  public addPassword(name: string, password: string, descriptor: string, secret: string): void {
+  public addPassword(
+    name: string,
+    password: string,
+    descriptor: string,
+    secret: string
+  ): void {
     const db = this.db;
     const stmt = db.prepare(
       `INSERT INTO passwords VALUES ($name, $pass, $desc);`,
@@ -106,7 +115,7 @@ export class SqlDatabase {
       }
     );
 
-    const encrypted = cryptr.encrypt(password, secret)
+    const encrypted = cryptr.encrypt(password, secret);
 
     stmt.run([name, encrypted, descriptor], (_: RunResult, error: Error) => {
       if (error) {
@@ -118,15 +127,15 @@ export class SqlDatabase {
 
   public addMultiplePasswords(passwords: PasswordEntry[]): void {
     // handle stuff
-    console.log(passwords)
+    console.log(passwords);
   }
 
   public deletePassword(id: number): void {
     // do stuff
-    console.log(id)
+    console.log(id);
   }
 
-  public initDb(): void {
+  public async initDb(): Promise<void> {
     console.log("Initalizing SQLite3 Database...");
     const db = this.db;
 
@@ -136,7 +145,7 @@ export class SqlDatabase {
     db.serialize(() => {
       db.run(
         `CREATE TABLE IF NOT EXISTS passwords (
-          name TEXT NOT NULL UNIQUE, 
+          name TEXT NOT NULL UNIQUE,
           password TEXT NOT NULL,
           descriptor TEXT
           );`
@@ -148,7 +157,7 @@ export class SqlDatabase {
       );
 
       for (let i = 0; i < 10; i++) {
-        stmt.run(i, String.fromCharCode("a".charCodeAt(0) + i), "hello");
+        stmt.run(String.fromCharCode("a".charCodeAt(0) + i), "password", "desc");
       }
 
       console.log("Finalizing statement...");
@@ -158,15 +167,17 @@ export class SqlDatabase {
         }
       });
 
-      db.each(
-        "SELECT rowid AS id, descriptor, password FROM passwords",
-        (err, row: { id: string; descriptor: string; password: string }) => {
-          if (err) {
-            console.error(err);
-          }
-          console.log(row);
-        }
-      );
+      this.getAllPasswords()
+
+      // db.each(
+      //   "SELECT rowid AS id, name, descriptor, password FROM passwords",
+      //   (err, row: PasswordEntry) => {
+      //     if (err) {
+      //       console.error(err);
+      //     }
+      //     console.log(row);
+      //   }
+      // );
     });
   }
 

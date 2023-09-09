@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES6",
     "allowJs": true,
-    "module": "NodeNext",
+    "module": "ES6",
     "skipLibCheck": true,
     "esModuleInterop": true,
     "noImplicitAny": true,
@@ -10,13 +10,13 @@
     "baseUrl": ".",
     "strict": true,
     "outDir": "dist",
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "Node10",
     "resolveJsonModule": true,
     "jsx": "react-jsx",
     "experimentalDecorators": true,
-    "isolatedModules": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+    "isolatedModules": true,
     "paths": {
       "*": ["node_modules/*"]
     }

@@ -3,6 +3,7 @@ import {
   app,
   BrowserWindow,
   ipcMain,
+  IpcMainEvent,
   MessageChannelMain,
   utilityProcess,
   MessagePortMain,
@@ -27,7 +28,18 @@ if (require("electron-squirrel-startup")) {
 // Some APIs can only be used after this event occurs.
 // app.on('ready', createWindow);
 
-app.whenReady().then(async () => {
+app.whenReady().then(() => {
+  ipcMain.on("port-from-renderer", (event: IpcMainEvent, args: any[]) => {
+    console.log("[Main Process] Message on \"port\" channel received, forwarding to child process")
+    console.log("this is the event:", event)
+    console.log("this is the msg:", args)
+    const child = childProcesses.at(-1)
+    if (child === undefined) {
+      console.error("child undefined")
+      return;
+    }
+    child.postMessage("port-from-renderer", event.ports)
+  })
   ipcMain.handle("dialog:openFile", handleFileOpen);
   ipcMain.handle("encrypt-password", handleEncryptPassword);
   ipcMain.handle("login", handleLogin);
@@ -80,12 +92,13 @@ function main(): void {
   });
 
   // Send the port to child process
-  child.postMessage("port", [port2]);
+  child.postMessage({ message: "port" }, [port2]);
 
   // Send a port to the renderer process
-  mainWindow.webContents.postMessage("main-world-port", null, [port1]);
-
+  
   port1.start();
+  
+  mainWindow.webContents.postMessage("main-world-port", null, [port1]);
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools();

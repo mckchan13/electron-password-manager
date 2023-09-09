@@ -17,7 +17,14 @@ ipcRenderer.on("main-world-port", async (event) => {
 });
 
 const electronAPI = {
-  openFile: () => ipcRenderer.invoke("dialog:openFile"),
+  sendPortsToMain: <M = any>(channel: string, message: M): MessagePort => {
+    const { port1, port2 } = new MessageChannel();
+    ipcRenderer.postMessage(channel, message, [port2]);
+    return port1;
+  },
+
+  openFile: (): Promise<any> => ipcRenderer.invoke("dialog:openFile"),
+
   encryptPassword: ({
     username,
     password,
@@ -26,13 +33,14 @@ const electronAPI = {
     username: string;
     password: string;
     secretKey: string;
-  }) => {
+  }): Promise<any> => {
     return ipcRenderer.invoke("encrypt-password", [
       username,
       password,
       secretKey,
     ]);
   },
+
   encryptPasswordChild: ({
     username,
     password,
@@ -47,6 +55,7 @@ const electronAPI = {
       password,
       secretKey,
     ]),
+
   forkUtilityProcess: ({
     username,
     password,
