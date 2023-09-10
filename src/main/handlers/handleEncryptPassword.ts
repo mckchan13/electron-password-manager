@@ -2,14 +2,30 @@ import Cryptr from "cryptr";
 
 export async function handleEncryptPassword(
   _: Electron.IpcMainInvokeEvent,
-  data: string[],
+  data: string[]
 ) {
-  const [, password, secretKey] = data;
+  try {
+    const [, password, secretKey] = data;
 
-  const cryptr = new Cryptr(secretKey);
-  const encryptedString = cryptr.encrypt(password);
-  const decryptedString = cryptr.decrypt(encryptedString);
-  console.log(decryptedString);
+    const encryptr = new Cryptr(secretKey);
+    const encryptedString = encryptr.encrypt(password);
+    console.log(
+      `Encrypting from password => hash: ${password} => ${encryptedString}`
+    );
 
-  return encryptedString;
+    // Error is thrown if the wrong secret is used
+    const decryptr = new Cryptr(secretKey);
+    const decryptedString = decryptr.decrypt(encryptedString);
+    console.log(
+      `Decrypting from hash => password: ${encryptedString} => ${decryptedString}`
+    );
+
+    return encryptedString;
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error(err);
+      return;
+    }
+    throw new Error(`Expected error to be thrown but got ${err} instead.`);
+  }
 }

@@ -1,15 +1,14 @@
-import React, { ReactElement } from "react";
-import { createRoot } from "react-dom/client";
+import { ReactElement, useEffect } from "react";
 import NavBar from "./components/NavBar";
 import EncryptPassword from "./components/EncryptPassword";
-import useMainPort from "./hooks/useMainPort";
-
-const rootElement = document.getElementById("root") as HTMLElement;
-const root = createRoot(rootElement);
 
 const App = (): ReactElement => {
-  
-  useMainPort();
+  useEffect(() => {
+    (async () => {
+      const passwords = await window.electronAPI.getAllPasswords();
+      console.log(passwords);
+    })();
+  }, []);
 
   return (
     <div>
@@ -19,8 +18,4 @@ const App = (): ReactElement => {
   );
 };
 
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+export default App;

@@ -1,9 +1,11 @@
 import React, { ReactElement, useState } from "react";
 
+
 type InputEvent = React.ChangeEvent<HTMLInputElement>;
 type FormEvent = React.FormEvent<HTMLFormElement>;
 
 const EncryptPassword = (): ReactElement => {
+
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [secretKey, setSecretKey] = useState<string>("");
