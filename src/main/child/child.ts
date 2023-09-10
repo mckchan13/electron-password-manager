@@ -16,6 +16,26 @@ const userInfo = {
 };
 
 process.on("loaded", async () => {
+  await main();
+});
+
+process.on("exit", () => {
+  const db = processUtilties.db;
+  if (db !== undefined) db.closeDb();
+  console.log(`Child process ${process.pid} is exiting.`);
+});
+
+process.on("uncaughtException", (err, origin) => {
+  console.error(err);
+  console.error(origin);
+});
+
+process.on("unhandledRejection", (err, origin) => {
+  console.error(err);
+  console.error(origin);
+});
+
+async function main(): Promise<void> {
   const userPathSet = await new Promise<boolean>((resolve) => {
     process.parentPort.prependOnceListener("message", (event) => {
       const { message, body } = event.data;
@@ -26,36 +46,27 @@ process.on("loaded", async () => {
   });
 
   if (!userPathSet) {
-    //handle case
     console.error("Something went wrong");
   }
 
   const config: SqlDatabaseConfig = {
     writablePath: userInfo.writablePath,
-    writablePathLocationName: userInfo.pathLocationName
-  }
+    writablePathLocationName: userInfo.pathLocationName,
+  };
 
   processUtilties.db = new SqlDatabase(config);
 
   const db = processUtilties.db;
-  await db.initDb();
+  await db.initDb({ loadDummyData: true });
 
   process.parentPort.on("message", async (event: Electron.MessageEvent) => {
     const response = await router(event, db);
     process.parentPort.postMessage(response);
   });
-});
-
-process.on("exit", () => {
-  const db = processUtilties.db;
-  if (db !== undefined) {
-    db.closeDb();
-  }
-  console.log(`Child process ${process.pid} is exiting.`);
-});
+}
 
 async function router(
-  event: Electron.MessageEvent,
+  _event: Electron.MessageEvent,
   db: SqlDatabase
 ): Promise<PasswordEntry[]> {
   /**
@@ -67,14 +78,14 @@ async function router(
 }
 
 // port handlers
-function setupPortHandlers(): void {
-  const port = processUtilties.port;
-  if (port !== undefined) {
-    port.on("message", (event) => {
-      console.log(`Message received from main world: ${event}`);
-    });
+// function setupPortHandlers(): void {
+//   const port = processUtilties.port;
+//   if (port !== undefined) {
+//     port.on("message", (event) => {
+//       console.log(`Message received from main world: ${event}`);
+//     });
 
-    port.postMessage({ message: "[From: Child Process] Port was received" });
-    port.start();
-  }
-}
+//     port.postMessage({ message: "[From: Child Process] Port was received" });
+//     port.start();
+//   }
+// }

@@ -4,9 +4,7 @@ import {
   BrowserWindow,
   ipcMain,
   IpcMainEvent,
-  MessageChannelMain,
   utilityProcess,
-  MessagePortMain,
   UtilityProcess,
 } from "electron";
 
@@ -36,9 +34,6 @@ if (require("electron-squirrel-startup")) {
 // app.on('ready', createWindow);
 
 app.whenReady().then(() => {
-  // listens for ipcRenderer.postMessage event
-  // ipcR args => channel => channel, cb(event, args) => event.ports, message => args
-
   main();
 });
 
@@ -67,7 +62,7 @@ app.on("activate", () => {
 });
 
 // In case the child process unexpectedly quit, log details to console for debugging
-app.on("child-process-gone", (_, details) => {
+app.on("child-process-gone", (_event, details) => {
   console.log(`Child Process unexpectedly quit:`);
   console.log(details);
 });
@@ -78,10 +73,6 @@ app.on("child-process-gone", (_, details) => {
 function main(): void {
   try {
     const userDataPath = app.getPath("userData");
-
-    // console.log(`THIS IS THE USER DATA PATH!!!!!${userDataPath}`);
-    // console.log(`THIS IS THE APP DATA PATH!!!!!${app.getPath("appData")}`);
-    // console.log(`THIS IS THE HOME DATA PATH!!!!!${app.getPath("home")}`);
 
     attachHandlers();
 
@@ -112,7 +103,6 @@ function main(): void {
     };
 
     child.postMessage(pathMessage);
-
 
     // Open the DevTools.
     mainWindow.webContents.openDevTools();
@@ -176,8 +166,6 @@ function attachHandlers(): void {
   });
 }
 
-
-
 function forkUtilityProcess(scriptPath: string): UtilityProcess {
   const scriptAbsolutePath = path.join(__dirname, scriptPath);
 
@@ -218,7 +206,6 @@ function forkUtilityProcess(scriptPath: string): UtilityProcess {
 
   return child;
 }
-
 
 /**
  * TODO: Re-enable message ports
