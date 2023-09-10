@@ -1,6 +1,7 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 import { contextBridge, ipcRenderer } from "electron";
+import { PasswordEntry } from "../main/db";
 
 // We need to wait until the main world is ready to receive the message before
 // sending the port. We create this promise in the preload so it's guaranteed
@@ -17,13 +18,15 @@ ipcRenderer.on("main-world-port", async (event) => {
 });
 
 const electronAPI = {
-  sendPortsToMain: <M = any>(channel: string, message: M): MessagePort => {
+  sendPortsToMain: <M = unknown>(channel: string, message: M): MessagePort => {
     const { port1, port2 } = new MessageChannel();
     ipcRenderer.postMessage(channel, message, [port2]);
     return port1;
   },
 
-  openFile: (): Promise<any> => ipcRenderer.invoke("dialog:openFile"),
+  openFile: (): Promise<unknown> => ipcRenderer.invoke("dialog:openFile"),
+
+  getAllPasswords: (): Promise<PasswordEntry[]> => ipcRenderer.invoke("getAllPasswords", "getAllPasswords"),
 
   encryptPassword: ({
     username,
@@ -33,38 +36,13 @@ const electronAPI = {
     username: string;
     password: string;
     secretKey: string;
-  }): Promise<any> => {
+  }): Promise<unknown> => {
     return ipcRenderer.invoke("encrypt-password", [
       username,
       password,
       secretKey,
     ]);
   },
-
-  encryptPasswordChild: ({
-    username,
-    password,
-    secretKey,
-  }: {
-    username: string;
-    password: string;
-    secretKey: string;
-  }) =>
-    ipcRenderer.invoke("encrypt-password-child", [
-      username,
-      password,
-      secretKey,
-    ]),
-
-  forkUtilityProcess: ({
-    username,
-    password,
-  }: {
-    username: string;
-    password: string;
-  }) => ipcRenderer.invoke("utilityProcess:fork", [username, password]),
-  login: ({ username, password }: { username: string; password: string }) =>
-    ipcRenderer.invoke("user-login", [username, password]),
 } as const;
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);
@@ -77,3 +55,30 @@ declare global {
     electronAPI: ElectronAPI;
   }
 }
+
+// const additionalElectronApis = {
+//   encryptPasswordChild: ({
+//     username,
+//     password,
+//     secretKey,
+//   }: {
+//     username: string;
+//     password: string;
+//     secretKey: string;
+//   }) =>
+//     ipcRenderer.invoke("encrypt-password-child", [
+//       username,
+//       password,
+//       secretKey,
+//     ]),
+
+//   forkUtilityProcess: ({
+//     username,
+//     password,
+//   }: {
+//     username: string;
+//     password: string;
+//   }) => ipcRenderer.invoke("utilityProcess:fork", [username, password]),
+//   login: ({ username, password }: { username: string; password: string }) =>
+//     ipcRenderer.invoke("user-login", [username, password]),
+// };

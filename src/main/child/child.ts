@@ -1,59 +1,80 @@
 // Child process
 import { MessagePortMain } from "electron";
-import { SqlDatabase } from "../db";
+import { PasswordEntry, SqlDatabase, SqlDatabaseConfig } from "../db";
 
-let port: MessagePortMain;
+const processUtilties: {
+  port: MessagePortMain | undefined;
+  db: SqlDatabase | undefined;
+} = {
+  port: undefined,
+  db: undefined,
+};
 
-process.parentPort.on("message", (event) => {
-  // here the event.data will receive the value from "channel???"
-  console.log(`Event received in child process: ${event.data}`)
-  if (event.data.message === "port") {
-    const [portFromMainProcess] = event.ports;
-    port = portFromMainProcess;
-    process.parentPort.postMessage({
-      message: `Message from child process to parent. ${event.data.message} received.`,
+const userInfo = {
+  writablePath: undefined,
+  pathLocationName: undefined,
+};
+
+process.on("loaded", async () => {
+  const userPathSet = await new Promise<boolean>((resolve) => {
+    process.parentPort.prependOnceListener("message", (event) => {
+      const { message, body } = event.data;
+      userInfo.pathLocationName = message;
+      userInfo.writablePath = body;
+      resolve(true);
     });
-    setupPortHandlers();
-  } else if (event.data.message === "port-from-renderer") {
-    // const [portFromRenderer] = event.ports;
-    console.log("here")
-  }
-});
+  });
 
-process.on("loaded", () => {
-  SqlDatabase.instance.initDb();
+  if (!userPathSet) {
+    //handle case
+    console.error("Something went wrong");
+  }
+
+  const config: SqlDatabaseConfig = {
+    writablePath: userInfo.writablePath,
+    writablePathLocationName: userInfo.pathLocationName
+  }
+
+  processUtilties.db = new SqlDatabase(config);
+
+  const db = processUtilties.db;
+  await db.initDb();
+
+  process.parentPort.on("message", async (event: Electron.MessageEvent) => {
+    const response = await router(event, db);
+    process.parentPort.postMessage(response);
+  });
 });
 
 process.on("exit", () => {
-  SqlDatabase.instance.closeDb();
+  const db = processUtilties.db;
+  if (db !== undefined) {
+    db.closeDb();
+  }
   console.log(`Child process ${process.pid} is exiting.`);
 });
 
-// encrypt and save
-
-// decrypt and get
-
-// auth
-
-function setupPortHandlers(): void {
-  port.on("message", (event) => {
-    console.log(`Message received from main world: ${event.data}`);
-    router(event);
-  });
-
-  port.postMessage({ message: "[From: Child Process] Port was received" });
-  port.start();
+async function router(
+  event: Electron.MessageEvent,
+  db: SqlDatabase
+): Promise<PasswordEntry[]> {
+  /**
+   * event.data => message
+   */
+  const data = await db.getAllPasswords();
+  console.log(`data returned from SqlDatabase:`, data);
+  return data;
 }
 
-function router(event: Electron.MessageEvent) {
-  switch (event.data) {
-    case "addPassword":
-      //do stuff
-      break;
-    case "deletePassword":
-      // do stuff
-      break;
-    default:
-    // do stuff
+// port handlers
+function setupPortHandlers(): void {
+  const port = processUtilties.port;
+  if (port !== undefined) {
+    port.on("message", (event) => {
+      console.log(`Message received from main world: ${event}`);
+    });
+
+    port.postMessage({ message: "[From: Child Process] Port was received" });
+    port.start();
   }
 }

@@ -12,6 +12,13 @@ import {
 
 import { handleFileOpen, handleEncryptPassword, handleLogin } from "./handlers";
 
+export type PathLocationName = Parameters<typeof app.getPath>[0];
+
+export type PathMessage<M, B> = {
+  message: M;
+  body: B;
+};
+
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
@@ -29,20 +36,9 @@ if (require("electron-squirrel-startup")) {
 // app.on('ready', createWindow);
 
 app.whenReady().then(() => {
-  ipcMain.on("port-from-renderer", (event: IpcMainEvent, args: any[]) => {
-    console.log("[Main Process] Message on \"port\" channel received, forwarding to child process")
-    console.log("this is the event:", event)
-    console.log("this is the msg:", args)
-    const child = childProcesses.at(-1)
-    if (child === undefined) {
-      console.error("child undefined")
-      return;
-    }
-    child.postMessage("port-from-renderer", event.ports)
-  })
-  ipcMain.handle("dialog:openFile", handleFileOpen);
-  ipcMain.handle("encrypt-password", handleEncryptPassword);
-  ipcMain.handle("login", handleLogin);
+  // listens for ipcRenderer.postMessage event
+  // ipcR args => channel => channel, cb(event, args) => event.ports, message => args
+
   main();
 });
 
@@ -80,30 +76,53 @@ app.on("child-process-gone", (_, details) => {
 // code. You can also put them in separate files and import them here.
 
 function main(): void {
-  const mainWindow = createMainWindow();
+  try {
+    const userDataPath = app.getPath("userData");
 
-  const child = forkUtilityProcess("./child.js");
+    // console.log(`THIS IS THE USER DATA PATH!!!!!${userDataPath}`);
+    // console.log(`THIS IS THE APP DATA PATH!!!!!${app.getPath("appData")}`);
+    // console.log(`THIS IS THE HOME DATA PATH!!!!!${app.getPath("home")}`);
 
-  const [port1, port2] = createMessagePorts();
+    attachHandlers();
 
-  // setup handler to output any received data from port2
-  port1.on("message", (event) => {
-    console.log(`[Message From Port 2]: ${event.data.message}`);
-  });
+    const mainWindow = createMainWindow();
 
-  // Send the port to child process
-  child.postMessage({ message: "port" }, [port2]);
+    const child = forkUtilityProcess("./child.js");
 
-  // Send a port to the renderer process
-  
-  port1.start();
-  
-  mainWindow.webContents.postMessage("main-world-port", null, [port1]);
+    /**
+     * TODO: Re-enable sending of ports
+     */
+    // const [port1, port2] = createMessagePorts();
 
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+    // // setup handler to output any received data from port2
+    // port1.on("message", (event) => {
+    //   console.log(`[Message From Port 2]: ${event}`);
+    // });
 
-  console.log(`App ${app.name} is ready and starting.`);
+    // // Send the port to child process
+    // child.postMessage({ message: "port" }, [port2]);
+
+    // port1.start();
+    // Send a port to the renderer process
+    // mainWindow.webContents.postMessage("main-world-port", null, [port1]);
+
+    const pathMessage: PathMessage<PathLocationName, string> = {
+      message: "userData",
+      body: userDataPath,
+    };
+
+    child.postMessage(pathMessage);
+
+
+    // Open the DevTools.
+    mainWindow.webContents.openDevTools();
+
+    console.log(`App ${app.name} is ready and starting.`);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(error);
+    }
+  }
 }
 
 function createMainWindow(): BrowserWindow {
@@ -129,6 +148,36 @@ function createMainWindow(): BrowserWindow {
   return mainWindow;
 }
 
+function attachHandlers(): void {
+  ipcMain.on("port-from-renderer", (event: IpcMainEvent) => {
+    const child = childProcesses.at(-1);
+    if (child === undefined) {
+      console.error("child undefined");
+      return;
+    }
+    child.postMessage("port-from-renderer", event.ports);
+  });
+  ipcMain.handle("dialog:openFile", handleFileOpen);
+  ipcMain.handle("encrypt-password", handleEncryptPassword);
+  ipcMain.handle("login", handleLogin);
+
+  ipcMain.handle("getAllPasswords", (_event, message) => {
+    const child = childProcesses.at(-1);
+    if (child !== undefined) {
+      child.postMessage(message);
+    }
+
+    return new Promise((resolve) => {
+      child?.prependOnceListener("message", (data) => {
+        console.log("[Child Responded]", data);
+        resolve(data);
+      });
+    });
+  });
+}
+
+
+
 function forkUtilityProcess(scriptPath: string): UtilityProcess {
   const scriptAbsolutePath = path.join(__dirname, scriptPath);
 
@@ -139,7 +188,7 @@ function forkUtilityProcess(scriptPath: string): UtilityProcess {
 
   // setup listener for parent to receive messages from child process
   child.on("message", (event) => {
-    console.log(`[Message received from Child Process] ${event.message}`);
+    console.log(`[Message received from Child Process] ${event}`);
   });
 
   // setup listener to log when the child process has spawned
@@ -170,8 +219,12 @@ function forkUtilityProcess(scriptPath: string): UtilityProcess {
   return child;
 }
 
-function createMessagePorts(): MessagePortMain[] {
-  const { port1, port2 } = new MessageChannelMain();
 
-  return [port1, port2];
-}
+/**
+ * TODO: Re-enable message ports
+ */
+// function createMessagePorts(): MessagePortMain[] {
+//   const { port1, port2 } = new MessageChannelMain();
+
+//   return [port1, port2];
+// }
