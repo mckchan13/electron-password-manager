@@ -3,12 +3,14 @@ import {
   app,
   BrowserWindow,
   ipcMain,
-  IpcMainEvent,
+  IpcMainInvokeEvent,
+  MessageChannelMain,
   utilityProcess,
   UtilityProcess,
 } from "electron";
 
-import { handleFileOpen, handleEncryptPassword, handleLogin } from "./handlers";
+import { handleFileOpen, handleEncryptPassword } from "./handlers";
+import { RequestObject, ResponseObject } from "../renderer/hooks";
 
 export type PathLocationName = Parameters<typeof app.getPath>[0];
 
@@ -20,7 +22,7 @@ export type PathMessage<M, B> = {
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
-// Instantiate an array to house any spawned child processes
+//! Instantiate an array to house any spawned child processes
 const childProcesses: UtilityProcess[] = [];
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -54,14 +56,14 @@ app.on("before-quit", () => {
 });
 
 app.on("activate", () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
+  // ? On OS X it's common to re-create a window in the app when the
+  // ? dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
     createMainWindow();
   }
 });
 
-// In case the child process unexpectedly quit, log details to console for debugging
+// ? In case the child process unexpectedly quit, log details to console for debugging
 app.on("child-process-gone", (_event, details) => {
   console.log(`Child Process unexpectedly quit:`);
   console.log(details);
@@ -70,39 +72,45 @@ app.on("child-process-gone", (_event, details) => {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
 
-function main(): void {
+async function main(): Promise<void> {
   try {
     const userDataPath = app.getPath("userData");
 
-    attachHandlers();
-
-    const mainWindow = createMainWindow();
-
+    // ! Fork a child process to handle all database transactions/api calls to avoid
+    // ! blocking main process with cpu intensive read/writes/encryptions
     const child = forkUtilityProcess("./child.js");
 
-    /**
-     * TODO: Re-enable sending of ports
-     */
-    // const [port1, port2] = createMessagePorts();
+    // ! Need to await for child to set the writable data path and ensure
+    // ! the listener fires and then can be re-assigned to fire for all subsequent messages
+    await new Promise((resolve) => {
+      const pathMessage: PathMessage<PathLocationName, string> = {
+        message: "userData",
+        body: userDataPath,
+      };
 
-    // // setup handler to output any received data from port2
-    // port1.on("message", (event) => {
-    //   console.log(`[Message From Port 2]: ${event}`);
-    // });
+      child.prependOnceListener("message", (message) => {
+        if (message === "userPathSet") {
+          console.log("Child process has set user path successfully");
+          resolve(true);
+        }
+      });
 
-    // // Send the port to child process
-    // child.postMessage({ message: "port" }, [port2]);
+      child.postMessage(pathMessage);
+    });
 
-    // port1.start();
-    // Send a port to the renderer process
-    // mainWindow.webContents.postMessage("main-world-port", null, [port1]);
+    //! setup listener for parent to receive messages from child process
+    child.on("message", (message) => {
+      console.log(`[Message received from Child Process] ${message}`);
+    });
 
-    const pathMessage: PathMessage<PathLocationName, string> = {
-      message: "userData",
-      body: userDataPath,
-    };
+    //! Attach handlers AFTER user path is set so that the child listener
+    //! can deal with that event, and reappend a new listener for all subsequent events
+    await attachIpcHandlers();
 
-    child.postMessage(pathMessage);
+    // ? This may need optimization, could cause for laggy startup experience for user
+    // ? create mainwindow at very end so that user cannot send messages
+    // ? until all setup is complete
+    const mainWindow = createMainWindow();
 
     // Open the DevTools.
     mainWindow.webContents.openDevTools();
@@ -138,50 +146,46 @@ function createMainWindow(): BrowserWindow {
   return mainWindow;
 }
 
-function attachHandlers(): void {
-  ipcMain.on("port-from-renderer", (event: IpcMainEvent) => {
-    const child = childProcesses.at(-1);
-    if (child === undefined) {
-      console.error("child undefined");
-      return;
-    }
-    child.postMessage("port-from-renderer", event.ports);
-  });
+async function attachIpcHandlers(): Promise<void> {
   ipcMain.handle("dialog:openFile", handleFileOpen);
   ipcMain.handle("encrypt-password", handleEncryptPassword);
-  ipcMain.handle("login", handleLogin);
+  ipcMain.handle("getAllPasswords", handleInvokeRequest);
+  ipcMain.handle("savePassword", handleInvokeRequest);
+}
 
-  ipcMain.handle("getAllPasswords", (_event, message) => {
-    const child = childProcesses.at(-1);
-    if (child !== undefined) {
-      child.postMessage(message);
-    }
+async function handleInvokeRequest(
+  _event: IpcMainInvokeEvent,
+  request: RequestObject
+): Promise<ResponseObject> {
+  const { port1, port2 } = new MessageChannelMain();
+  const child = childProcesses.at(-1);
 
-    return new Promise((resolve) => {
-      child?.prependOnceListener("message", (data) => {
-        console.log("[Child Responded]", data);
-        resolve(data);
-      });
+  return await new Promise((resolve) => {
+    child?.postMessage(request, [port2]);
+    port1.on("message", ({ data }: { data: ResponseObject }) => {
+      resolve(data);
+      process.nextTick(() => port1.close());
     });
+    port1.start();
   });
 }
 
 function forkUtilityProcess(scriptPath: string): UtilityProcess {
   const scriptAbsolutePath = path.join(__dirname, scriptPath);
 
+  //! Set stdio to pipe so that child console logs will be visible from terminal
   const child = utilityProcess.fork(scriptAbsolutePath, [], {
     stdio: "pipe",
     serviceName: "child-utility-process",
   });
 
-  // setup listener for parent to receive messages from child process
-  child.on("message", (event) => {
-    console.log(`[Message received from Child Process] ${event}`);
-  });
-
   // setup listener to log when the child process has spawned
   child.once("spawn", () => {
-    // when child process has spawned, the stdout property should not be null
+
+    //! When child process has spawned, the stdout property should not be null
+    //! Setup listeners to console log whenever there is a console log or error
+    //! for debugging the child process
+    
     child.stdout?.on("data", (data) => {
       console.log(`[Child Process][stdout]:${data}`);
     });
@@ -196,7 +200,7 @@ function forkUtilityProcess(scriptPath: string): UtilityProcess {
       } at ${path.join(
         __dirname,
         scriptPath
-      )}\nSetting up event handlers for child process`
+      )}\nSetting up event handlers to pipe child process stdio and stderr to main process stdio`
     );
   });
 
@@ -206,12 +210,3 @@ function forkUtilityProcess(scriptPath: string): UtilityProcess {
 
   return child;
 }
-
-/**
- * TODO: Re-enable message ports
- */
-// function createMessagePorts(): MessagePortMain[] {
-//   const { port1, port2 } = new MessageChannelMain();
-
-//   return [port1, port2];
-// }

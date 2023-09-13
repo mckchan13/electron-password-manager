@@ -1,7 +1,7 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 import { contextBridge, ipcRenderer } from "electron";
-import { PasswordEntry } from "../main/db";
+import { RequestObject, ResponseObject } from "../renderer/hooks";
 
 // We need to wait until the main world is ready to receive the message before
 // sending the port. We create this promise in the preload so it's guaranteed
@@ -18,15 +18,11 @@ ipcRenderer.on("main-world-port", async (event) => {
 });
 
 const electronAPI = {
-  sendPortsToMain: <M = unknown>(channel: string, message: M): MessagePort => {
-    const { port1, port2 } = new MessageChannel();
-    ipcRenderer.postMessage(channel, message, [port2]);
-    return port1;
-  },
-
   openFile: (): Promise<unknown> => ipcRenderer.invoke("dialog:openFile"),
 
-  getAllPasswords: (): Promise<PasswordEntry[]> => ipcRenderer.invoke("getAllPasswords", "getAllPasswords"),
+  getAllPasswords: invokePortRequest("getAllPasswords"),
+
+  savePassword: invokePortRequest("savePassword"),
 
   encryptPassword: ({
     username,
@@ -36,7 +32,7 @@ const electronAPI = {
     username: string;
     password: string;
     secretKey: string;
-  }): Promise<unknown> => {
+  }): Promise<string> => {
     return ipcRenderer.invoke("encrypt-password", [
       username,
       password,
@@ -45,12 +41,21 @@ const electronAPI = {
   },
 } as const;
 
+function invokePortRequest(
+  channel: string
+): (request: RequestObject) => Promise<ResponseObject> {
+  return (request: RequestObject) => ipcRenderer.invoke(channel, request);
+}
+
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);
+
 
 declare global {
   export type ElectronAPI = typeof electronAPI;
+  export type ElectronAPIKeys = keyof ElectronAPI
   export type ElectronMethods = (typeof electronAPI)[keyof typeof electronAPI];
-  export type HandlerArguments = Parameters<ElectronMethods>[0];
+  export type Test = keyof ElectronAPI;
+  export type HandlerArguments = Parameters<ElectronMethods>;
   export interface Window {
     electronAPI: ElectronAPI;
   }

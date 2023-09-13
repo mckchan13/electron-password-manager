@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
 
-
-/**
- * 
- * @returns MessagePort | undefined
- */
 function useMainPort(): MessagePort | undefined {
   const [messagePort, setMessagePort] = useState<MessagePort>();
 
@@ -12,7 +7,7 @@ function useMainPort(): MessagePort | undefined {
     console.log("useEffect firing");
     if (window.onmessage === null) {
       window.onmessage = (event) => {
-        console.log("on message event was fired")
+        console.log("on message event was fired");
         // event.source === window means the message is coming from the preload
         // script, as opposed to from an <iframe> or other source.
         console.log(`[Main World][index.html]: on message event fired`);
