@@ -1,47 +1,17 @@
-import React, { ReactElement, useState } from "react";
-
-
-type InputEvent = React.ChangeEvent<HTMLInputElement>;
-type FormEvent = React.FormEvent<HTMLFormElement>;
+import { ReactElement } from "react";
+import useEncryptPasswordState from "../hooks/useEncryptPasswordState";
 
 const EncryptPassword = (): ReactElement => {
-
-  const [username, setUsername] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [secretKey, setSecretKey] = useState<string>("");
-  const [encryptedPassword, setEncryptedPassword] = useState<string>();
-
-  const handleUsername = (e: InputEvent): void => {
-    setUsername(e.target.value);
-  };
-
-  const handlePassword = (e: InputEvent): void => {
-    setPassword(e.target.value);
-  };
-
-  const handleSecretKey = (e: InputEvent): void => {
-    setSecretKey(e.target.value);
-  };
-
-  const handleSubmit = async (e: FormEvent): Promise<void> => {
-    e.preventDefault();
-
-    if (!username || !password || !secretKey) {
-      console.error("All fields must be filled out");
-      return;
-    }
-
-    const encrypted = await window.electronAPI.encryptPassword({
-      username,
-      password,
-      secretKey,
-    });
-
-    setUsername("");
-    setPassword("");
-    setSecretKey("");
-    setEncryptedPassword(encrypted);
-  };
+  const {
+    username,
+    password,
+    secretKey,
+    encryptedPassword,
+    handleUsername,
+    handlePassword,
+    handleSecretKey,
+    handleSubmit,
+  } = useEncryptPasswordState();
 
   return (
     <div className="flex-col">

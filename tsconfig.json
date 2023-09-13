@@ -17,5 +17,5 @@
     "noUnusedParameters": true,
     "isolatedModules": true,
   },
-  "include": ["src/**/*", "src/renderer/components"]
+  "include": ["src/**/*"]
 }

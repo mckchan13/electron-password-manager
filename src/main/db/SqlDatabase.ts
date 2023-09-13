@@ -13,8 +13,8 @@ export type PasswordEntry = {
 };
 
 export type SqlDatabaseConfig = {
-  writablePath: string | undefined;
-  writablePathLocationName: PathLocationName | undefined;
+  writablePath?: string;
+  writablePathLocationName?: PathLocationName;
 };
 
 export class SqlDatabase {
@@ -47,17 +47,6 @@ export class SqlDatabase {
       }
     });
     console.log("Connected to the in memory SQLite Database");
-
-    // For now always start db in memory for development
-
-    // try to load existing database file
-    // TODO: find a way to get electron to write a new folder to either
-    // "userData" or "appData" paths
-
-    // const userDataPath = app.getPath("userData");
-    // console.log(`Loading database file at ${userDataPath}/app.db`);
-    // this.db = new sqlite3.Database(`${userDataPath}/app.db`);
-    // return;
   }
 
   public async getAllPasswords(): Promise<PasswordEntry[]> {
@@ -110,12 +99,12 @@ export class SqlDatabase {
     return rows;
   }
 
-  public addPassword(
+  public async savePassword(
     name: string,
     password: string,
     descriptor: string,
     secret: string
-  ): void {
+  ): Promise<void> {
     const db = this.db;
     const stmt = db.prepare(
       `INSERT INTO passwords VALUES ($name, $pass, $desc);`,
@@ -126,7 +115,7 @@ export class SqlDatabase {
       }
     );
 
-    const encrypted = cryptr.encrypt(password, secret);
+    const encrypted = await cryptr.encrypt(password, secret);
 
     stmt.run([name, encrypted, descriptor], (_: unknown, err: Error) => {
       if (err instanceof Error) {

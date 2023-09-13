@@ -1,27 +1,45 @@
-export type Requestor<M = unknown, R = unknown> = (message: M) => Promise<R>;
+export type RequestHook<M = unknown, R = unknown> = (message: M) => Promise<R>;
 
-/**
- *
- * @returns Requestor
- */
-function useRequest(): Requestor {
-  return function request<M = unknown, R = unknown>(message: M): Promise<R> {
-    const port1 = window.electronAPI.sendPortsToMain(
-      "port-from-renderer",
-      message
-    );
+export type RequestObject<T = unknown, K = unknown> = {
+  method: "GET" | "POST" | "PUT" | "DELETE";
+  context: K;
+  payload: T;
+};
 
-    console.log(port1);
+export type ResponseObject<T = unknown, K = unknown> = {
+  status: "success" | "failure";
+  context: K;
+  payload: T;
+};
 
-    return new Promise((resolve) => {
-      port1.onmessage = (event) => {
-        const response: R = event.data;
-        console.log("port1 on message firing");
-        resolve(response);
-        port1.close();
-      };
-    });
-  };
+function usePortRequest(
+  requestFunc: () => unknown,
+  resultsCb: (requestResult?: unknown) => void
+): Promise<ResponseObject> {
+  const requestResult = requestFunc();
+  resultsCb(requestResult);
+
+  return new Promise((resolve) => {
+    // Need to trigger the main process to send a port via the mainWindow postMessage api
+    // then listen for this port on the window
+    window.onmessage = (event: MessageEvent) => {
+      if (event.source === window && event.data === "main-world-port") {
+        const [port] = event.ports;
+
+        port.onmessage = (event: MessageEvent<ResponseObject>) => {
+          console.log(event);
+          const response: ResponseObject = event.data;
+
+          queueMicrotask(() => {
+            port.close();
+            window.onmessage = null;
+          });
+
+          resolve(response);
+        };
+      }
+    };
+  });
 }
 
-export default useRequest;
+export default usePortRequest;

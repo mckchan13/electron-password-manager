@@ -1,6 +1,7 @@
 // Child process
 import { MessagePortMain } from "electron";
-import { PasswordEntry, SqlDatabase, SqlDatabaseConfig } from "../db";
+import { SqlDatabase, SqlDatabaseConfig } from "../db";
+import { RequestObject, ResponseObject } from "../../renderer/hooks";
 
 const processUtilties: {
   port: MessagePortMain | undefined;
@@ -38,9 +39,11 @@ process.on("unhandledRejection", (err, origin) => {
 async function main(): Promise<void> {
   const userPathSet = await new Promise<boolean>((resolve) => {
     process.parentPort.prependOnceListener("message", (event) => {
+      // message arg from postMessage becomes event.data on the listener
       const { message, body } = event.data;
       userInfo.pathLocationName = message;
       userInfo.writablePath = body;
+      process.parentPort.postMessage("userPathSet");
       resolve(true);
     });
   });
@@ -60,32 +63,60 @@ async function main(): Promise<void> {
   await db.initDb({ loadDummyData: true });
 
   process.parentPort.on("message", async (event: Electron.MessageEvent) => {
-    const response = await router(event, db);
-    process.parentPort.postMessage(response);
+    if (event.ports.length === 0) {
+      throw new Error("No ports included with request");
+    }
+    console.log("Forwarding request to router");
+    await router(event, event.ports, db);
   });
 }
 
 async function router(
-  _event: Electron.MessageEvent,
+  event: Electron.MessageEvent,
+  ports: MessagePortMain[],
   db: SqlDatabase
-): Promise<PasswordEntry[]> {
-  /**
-   * event.data => message
-   */
-  const data = await db.getAllPasswords();
-  console.log(`data returned from SqlDatabase:`, data);
-  return data;
+): Promise<void> {
+  const request: RequestObject = event.data;
+
+  let response: ResponseObject;
+  let payload: unknown;
+
+  switch (request.context) {
+    case "getAllPasswords": {
+      console.log("getAllPasswords firing")
+      payload = await db.getAllPasswords();
+      response = {
+        status: "success",
+        context: "getAllPasswords",
+        payload,
+      };
+      break;
+    }
+    case "savePassword": {
+      const { username, password, secret } = request.payload as {
+        username: string;
+        password: string;
+        secret: string;
+      };
+      await db.savePassword(username, password, "", secret);
+      response = {
+        status: "success",
+        context: "savePassword",
+        payload: null,
+      };
+      break;
+    }
+    default:
+      response = {
+        status: "failure",
+        context: request.context,
+        payload: null,
+      };
+  }
+
+  const responsePort = ports[0];
+
+  console.log("child is about to respond");
+  responsePort.postMessage(response);
+  responsePort.start();
 }
-
-// port handlers
-// function setupPortHandlers(): void {
-//   const port = processUtilties.port;
-//   if (port !== undefined) {
-//     port.on("message", (event) => {
-//       console.log(`Message received from main world: ${event}`);
-//     });
-
-//     port.postMessage({ message: "[From: Child Process] Port was received" });
-//     port.start();
-//   }
-// }
