@@ -1,30 +1,16 @@
 // Child process
 import { MessagePortMain } from "electron";
 import { SqlDatabase, SqlDatabaseConfig } from "../db";
-import { Photon } from "../lib/Photon";
 import { SavePasswordPayload } from "../../renderer/hooks";
-import { PhotonMiddleware } from "../lib/Photon/types";
-
-const processUtilties: {
-  port: MessagePortMain | undefined;
-  db: SqlDatabase | undefined;
-} = {
-  port: undefined,
-  db: undefined,
-};
-
-const userInfo = {
-  writablePath: undefined,
-  pathLocationName: undefined,
-};
+import { Valence } from "../lib/Valence";
+import { requestValidator } from "../lib/Valence/middleware";
+import { ValenceContext } from "../lib/Valence/types";
 
 process.on("loaded", async () => {
   await main();
 });
 
 process.on("exit", () => {
-  const db = processUtilties.db;
-  if (db !== undefined) db.closeDb();
   console.log(`Child process ${process.pid} is exiting.`);
 });
 
@@ -39,9 +25,21 @@ process.on("unhandledRejection", (err, origin) => {
 });
 
 async function main(): Promise<void> {
+  const userInfo = {
+    writablePath: undefined,
+    pathLocationName: undefined,
+  };
+
+  const processUtilties: {
+    port: MessagePortMain | undefined;
+    db: SqlDatabase | undefined;
+  } = {
+    port: undefined,
+    db: undefined,
+  };
+
   const userPathSet = await new Promise<boolean>((resolve) => {
     process.parentPort.prependOnceListener("message", (event) => {
-      // message arg from postMessage becomes event.data on the listener
       const { message, body } = event.data;
       userInfo.pathLocationName = message;
       userInfo.writablePath = body;
@@ -51,7 +49,7 @@ async function main(): Promise<void> {
   });
 
   if (!userPathSet) {
-    console.error("Something went wrong");
+    console.error("The process was unable to set the user path.");
   }
 
   const config: SqlDatabaseConfig = {
@@ -64,43 +62,32 @@ async function main(): Promise<void> {
   const db = processUtilties.db;
   await db.initDb({ loadDummyData: true });
 
-  const photon = new Photon({ datasources: { sql: db } });
+  const valence = new Valence({ datasources: { sql: db } });
 
-  photon.use("getAllPasswords", testMiddleware, async (ctx) => {
+  valence.usePreHook(requestValidator());
+
+  valence.use("getAllPasswords", async (ctx: ValenceContext): Promise<void> => {
     const ds = ctx.datasources as { sql: SqlDatabase };
     const passwords = await ds.sql.getAllPasswords();
     ctx.response.send(passwords);
   });
 
-  photon.use("savePassword", async (ctx) => {
+  valence.use("savePassword", async (ctx: ValenceContext): Promise<void> => {
     const {
       request: { payload },
     } = ctx;
-
-    console.log(payload)
-
     const {
       username: name,
       password,
       secretKey: secret,
     } = payload as SavePasswordPayload;
-
     const descriptor = "";
-
     const ds = ctx.datasources as { sql: SqlDatabase };
-
-    ds.sql.savePassword(name, password, descriptor, secret);
-
-    ctx.response.send("Successfully saved")
+    await ds.sql.savePassword(name, password, descriptor, secret);
+    ctx.response.send("Successfully saved");
   });
 
-  photon.listen(() => {
+  valence.listen(() => {
     console.log("Listening on parent port... ");
   });
-}
-
-const testMiddleware: PhotonMiddleware = async function (_ctx, next): Promise<void> {
-  // handle
-  console.log("inside test middleware")
-  return await next()
 }

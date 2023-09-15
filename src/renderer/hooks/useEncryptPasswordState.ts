@@ -1,14 +1,29 @@
 import { useState } from "react";
-import { RequestObject } from "./useRequest";
 
-export type InputEvent = React.ChangeEvent<HTMLInputElement>;
-export type FormEvent = React.FormEvent<HTMLFormElement>;
+export type RequestHook<M = unknown, R = unknown> = (message: M) => Promise<R>;
+
+export type RequestObject<T = unknown, K = string> = {
+  method: "GET" | "POST" | "PUT" | "DELETE";
+  route: K;
+  payload: T;
+  channel: string;
+};
+
+export type ResponseObject<T = unknown, K = unknown> = {
+  status: "success" | "failure";
+  context: K;
+  payload: T;
+};
 
 export type SavePasswordPayload = {
   username: string;
   password: string;
   secretKey: string;
-}
+};
+
+export type InputEvent = React.ChangeEvent<HTMLInputElement>;
+export type FormEvent = React.FormEvent<HTMLFormElement>;
+
 
 function useEncryptPasswordState() {
   const [username, setUsername] = useState<string>("username");
@@ -34,11 +49,12 @@ function useEncryptPasswordState() {
     if (!username || !password || !secretKey) {
       console.error("All fields must be filled out");
       return;
-    }    
+    }
 
     const request: RequestObject<SavePasswordPayload> = {
       method: "POST",
       route: "savePassword",
+      channel: "savePassword",
       payload: {
         username,
         password,
@@ -46,9 +62,9 @@ function useEncryptPasswordState() {
       },
     };
 
-    const response = await window.electronAPI.savePassword(request);
+    const response = await window.electronAPI.fetch(request);
 
-    console.log(response)
+    console.log(response);
 
     const encrypted = await window.electronAPI.encryptPassword({
       username,

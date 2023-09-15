@@ -22,7 +22,11 @@ const electronAPI = {
 
   getAllPasswords: invokePortRequest("getAllPasswords"),
 
-  savePassword: invokePortRequest("savePassword"),
+
+  fetch: (request: RequestObject) => {
+    const { channel } = request;
+    return ipcRenderer.invoke(channel, request);
+  },
 
   encryptPassword: ({
     username,
@@ -49,10 +53,9 @@ function invokePortRequest(
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);
 
-
 declare global {
   export type ElectronAPI = typeof electronAPI;
-  export type ElectronAPIKeys = keyof ElectronAPI
+  export type ElectronAPIKeys = keyof ElectronAPI;
   export type ElectronMethods = (typeof electronAPI)[keyof typeof electronAPI];
   export type Test = keyof ElectronAPI;
   export type HandlerArguments = Parameters<ElectronMethods>;

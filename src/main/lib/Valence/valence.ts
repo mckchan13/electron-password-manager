@@ -2,32 +2,32 @@ import { MessagePortMain } from "electron";
 import { SqlDatabase } from "../../db";
 import { RequestObject } from "../../../renderer/hooks";
 import {
-  PhotonMiddleware,
-  PhotonRequest,
-  PhotonContext,
-  PhotonResponseStatus,
+  ValenceMiddleware,
+  ValenceRequest,
+  ValenceContext,
+  ValenceResponseStatus,
+  ElectronPorts,
 } from "./types";
 
-export class Photon {
+export class Valence {
   private process: NodeJS.Process;
-  private routesMap: Map<string, PhotonMiddleware[]>;
-  private preHooks: PhotonMiddleware[];
+  private routesMap: Map<string, ValenceMiddleware[]>;
+  private preHooks: ValenceMiddleware[];
   private datasources: { sql?: SqlDatabase };
 
   constructor(public config?: { datasources?: unknown }) {
-    console.log("Photon is constructing");
     this.process = process;
     this.datasources = this.config?.datasources ?? {};
-    this.preHooks = new Array<PhotonMiddleware>();
-    this.routesMap = new Map<string, PhotonMiddleware[]>();
+    this.preHooks = new Array<ValenceMiddleware>();
+    this.routesMap = new Map<string, ValenceMiddleware[]>();
   }
 
-  public pre(...middleware: PhotonMiddleware[]): Photon {
+  public usePreHook(...middleware: ValenceMiddleware[]): Valence {
     this.preHooks.push(...middleware);
     return this;
   }
 
-  public use(route: string, ...middleware: PhotonMiddleware[]): Photon {
+  public use(route: string, ...middleware: ValenceMiddleware[]): Valence {
     if (!this.routesMap.has(route)) {
       this.routesMap.set(route, []);
     }
@@ -43,24 +43,49 @@ export class Photon {
     datasources[key] = database;
   }
 
+  public listen(callback?: (port: ElectronPorts) => void): void;
   public listen(
-    callback?: (port?: Electron.ParentPort | MessagePortMain) => void
-  ) {
+    port?: ElectronPorts,
+    callback?: (port?: ElectronPorts) => void
+  ): void;
+  public listen(
+    portOrCallback?: ElectronPorts | ((port: ElectronPorts) => void),
+    callback?: (port: ElectronPorts) => void
+  ): void {
     this.buildAllPipelines();
-    this.process.parentPort.on(
-      "message",
-      async ({ data, ports }: Electron.MessageEvent) => {
-        if (ports.length === 0) {
-          throw new Error("No ports received with request");
-        }
-        const request: RequestObject = data;
-        const portToReceiver = ports[0];
-        await this.execute(request, portToReceiver);
-      }
-    );
 
-    if (callback) {
-      callback(this.process.parentPort);
+    let port: ElectronPorts = this.process.parentPort;
+
+    if (portOrCallback !== undefined && typeof portOrCallback !== "function") {
+      port = portOrCallback;
+    } else if (portOrCallback !== undefined) {
+      port = this.process.parentPort;
+      callback = portOrCallback;
+    }
+
+    port.on("message", async ({ data, ports }: Electron.MessageEvent) => {
+      if (ports.length === 0) {
+        throw new SyntaxError("No ports received with request");
+      }
+
+      const request: RequestObject = data;
+
+      if (request.route === undefined) {
+        throw new SyntaxError("No route was specified in the request.");
+      }
+
+      if (request.method !== "GET" && request.payload === undefined) {
+        throw new SyntaxError(
+          "No payload was specified with the mutation request."
+        );
+      }
+
+      const portToReceiver = ports[0];
+      await this.execute(request, portToReceiver);
+    });
+
+    if (callback !== undefined) {
+      callback(port);
     }
   }
 
@@ -68,18 +93,19 @@ export class Photon {
     request: RequestObject,
     port: MessagePortMain
   ): Promise<void> {
-    console.log(`Getting route ${request.route}`);
     const pipeline = this.routesMap.get(request.route);
 
     if (pipeline === undefined) {
-      throw new Error("Route not found.");
+      throw new ReferenceError(
+        "Route was not found. Check if a specified route exists."
+      );
     }
 
     const ctx = this.contextBuilder(request, port);
     let prevIdx = -1;
 
     const runner = async (idx: number): Promise<void> => {
-      if (idx === prevIdx) throw new Error("Next called twice");
+      if (idx === prevIdx) throw new SyntaxError("Next was called twice.");
       prevIdx = idx;
       const func = pipeline[idx];
       if (func !== undefined) {
@@ -97,9 +123,9 @@ export class Photon {
   }
 
   private contextBuilder(
-    request: PhotonRequest,
+    request: ValenceRequest,
     port: MessagePortMain
-  ): PhotonContext {
+  ): ValenceContext {
     const datasources = this.datasources;
     const { method, route } = request;
     const context = {
@@ -112,7 +138,7 @@ export class Photon {
         status: "pending",
         payload: undefined,
         port,
-        setStatus: function (status: PhotonResponseStatus) {
+        setStatus: function (status: ValenceResponseStatus) {
           this.status = status;
         },
         send: function <T = unknown>(payload: T): void {
