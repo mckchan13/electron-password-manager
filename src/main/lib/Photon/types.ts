@@ -34,5 +34,5 @@ export type PhotonContext<B = unknown> = {
 
 export type PhotonMiddleware = (
   ctx: PhotonContext,
-  next?: () => void | Promise<void>
+  next: () => void | Promise<void>
 ) => void | Promise<void>;

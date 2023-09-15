@@ -3,6 +3,7 @@ import { MessagePortMain } from "electron";
 import { SqlDatabase, SqlDatabaseConfig } from "../db";
 import { Photon } from "../lib/Photon";
 import { SavePasswordPayload } from "../../renderer/hooks";
+import { PhotonMiddleware } from "../lib/Photon/types";
 
 const processUtilties: {
   port: MessagePortMain | undefined;
@@ -65,7 +66,7 @@ async function main(): Promise<void> {
 
   const photon = new Photon({ datasources: { sql: db } });
 
-  photon.use("getAllPasswords", async (ctx) => {
+  photon.use("getAllPasswords", testMiddleware, async (ctx) => {
     const ds = ctx.datasources as { sql: SqlDatabase };
     const passwords = await ds.sql.getAllPasswords();
     ctx.response.send(passwords);
@@ -89,11 +90,17 @@ async function main(): Promise<void> {
     const ds = ctx.datasources as { sql: SqlDatabase };
 
     ds.sql.savePassword(name, password, descriptor, secret);
-    
+
     ctx.response.send("Successfully saved")
   });
 
   photon.listen(() => {
     console.log("Listening on parent port... ");
   });
+}
+
+const testMiddleware: PhotonMiddleware = async function (_ctx, next): Promise<void> {
+  // handle
+  console.log("inside test middleware")
+  return await next()
 }

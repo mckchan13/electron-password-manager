@@ -9,7 +9,7 @@ import {
 } from "./types";
 
 export class Photon {
-  public process: NodeJS.Process;
+  private process: NodeJS.Process;
   private routesMap: Map<string, PhotonMiddleware[]>;
   private preHooks: PhotonMiddleware[];
   private datasources: { sql?: SqlDatabase };
@@ -38,7 +38,7 @@ export class Photon {
     return this;
   }
 
-  public addDatasource(key: string, database: unknown): void {
+  public addDatasource<D = unknown>(key: string, database: D): void {
     const datasources = this.datasources as Record<typeof key, typeof database>;
     datasources[key] = database;
   }
