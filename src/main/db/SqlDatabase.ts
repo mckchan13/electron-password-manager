@@ -1,6 +1,6 @@
 import path from "node:path";
 import sqlite3 from "sqlite3";
-import * as cryptr from "../lib/cryptr";
+import * as cryptr from "../lib/cryptr/cryptr";
 import { PathLocationName } from "../index";
 
 const sqlite3V = sqlite3.verbose();
@@ -114,6 +114,8 @@ export class SqlDatabase {
         }
       }
     );
+
+    console.log(`inside SqlDatabase savePassword ${name}, ${password}, ${descriptor}, ${secret}`)
 
     const encrypted = await cryptr.encrypt(password, secret);
 

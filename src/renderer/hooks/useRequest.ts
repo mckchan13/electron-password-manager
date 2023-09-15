@@ -1,8 +1,8 @@
 export type RequestHook<M = unknown, R = unknown> = (message: M) => Promise<R>;
 
-export type RequestObject<T = unknown, K = unknown> = {
+export type RequestObject<T = unknown, K = string> = {
   method: "GET" | "POST" | "PUT" | "DELETE";
-  context: K;
+  route: K;
   payload: T;
 };
 

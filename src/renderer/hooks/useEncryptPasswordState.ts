@@ -4,6 +4,12 @@ import { RequestObject } from "./useRequest";
 export type InputEvent = React.ChangeEvent<HTMLInputElement>;
 export type FormEvent = React.FormEvent<HTMLFormElement>;
 
+export type SavePasswordPayload = {
+  username: string;
+  password: string;
+  secretKey: string;
+}
+
 function useEncryptPasswordState() {
   const [username, setUsername] = useState<string>("username");
   const [password, setPassword] = useState<string>("password");
@@ -28,11 +34,11 @@ function useEncryptPasswordState() {
     if (!username || !password || !secretKey) {
       console.error("All fields must be filled out");
       return;
-    }
+    }    
 
-    const request: RequestObject = {
+    const request: RequestObject<SavePasswordPayload> = {
       method: "POST",
-      context: "encrypt-password",
+      route: "savePassword",
       payload: {
         username,
         password,

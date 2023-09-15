@@ -8,7 +8,7 @@ const App = (): ReactElement => {
     (async () => {
       const request: RequestObject = {
         method: "GET",
-        context: "getAllPasswords",
+        route: "getAllPasswords",
         payload: null,
       }
       const passwords = await window.electronAPI.getAllPasswords(request);
