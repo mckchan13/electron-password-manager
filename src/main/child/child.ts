@@ -1,7 +1,8 @@
 // Child process
 import { MessagePortMain } from "electron";
 import { SqlDatabase, SqlDatabaseConfig } from "../db";
-import { RequestObject, ResponseObject } from "../../renderer/hooks";
+import { Photon } from "../lib/Photon";
+import { SavePasswordPayload } from "../../renderer/hooks";
 
 const processUtilties: {
   port: MessagePortMain | undefined;
@@ -62,61 +63,37 @@ async function main(): Promise<void> {
   const db = processUtilties.db;
   await db.initDb({ loadDummyData: true });
 
-  process.parentPort.on("message", async (event: Electron.MessageEvent) => {
-    if (event.ports.length === 0) {
-      throw new Error("No ports included with request");
-    }
-    console.log("Forwarding request to router");
-    await router(event, event.ports, db);
+  const photon = new Photon({ datasources: { sql: db } });
+
+  photon.use("getAllPasswords", async (ctx) => {
+    const ds = ctx.datasources as { sql: SqlDatabase };
+    const passwords = await ds.sql.getAllPasswords();
+    ctx.response.send(passwords);
   });
-}
 
-async function router(
-  event: Electron.MessageEvent,
-  ports: MessagePortMain[],
-  db: SqlDatabase
-): Promise<void> {
-  const request: RequestObject = event.data;
+  photon.use("savePassword", async (ctx) => {
+    const {
+      request: { payload },
+    } = ctx;
 
-  let response: ResponseObject;
-  let payload: unknown;
+    console.log(payload)
 
-  switch (request.context) {
-    case "getAllPasswords": {
-      console.log("getAllPasswords firing")
-      payload = await db.getAllPasswords();
-      response = {
-        status: "success",
-        context: "getAllPasswords",
-        payload,
-      };
-      break;
-    }
-    case "savePassword": {
-      const { username, password, secret } = request.payload as {
-        username: string;
-        password: string;
-        secret: string;
-      };
-      await db.savePassword(username, password, "", secret);
-      response = {
-        status: "success",
-        context: "savePassword",
-        payload: null,
-      };
-      break;
-    }
-    default:
-      response = {
-        status: "failure",
-        context: request.context,
-        payload: null,
-      };
-  }
+    const {
+      username: name,
+      password,
+      secretKey: secret,
+    } = payload as SavePasswordPayload;
 
-  const responsePort = ports[0];
+    const descriptor = "";
 
-  console.log("child is about to respond");
-  responsePort.postMessage(response);
-  responsePort.start();
+    const ds = ctx.datasources as { sql: SqlDatabase };
+
+    ds.sql.savePassword(name, password, descriptor, secret);
+    
+    ctx.response.send("Successfully saved")
+  });
+
+  photon.listen(() => {
+    console.log("Listening on parent port... ");
+  });
 }
