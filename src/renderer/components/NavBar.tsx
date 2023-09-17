@@ -1,16 +1,16 @@
-import { ReactElement, useContext } from "react";
+import { ReactElement, useContext, useCallback } from "react";
 import NavigationContext from "../context/context";
 
 const NavBar = (): ReactElement => {
     const { navigate } = useContext(NavigationContext);
 
-    const handleNavigation = (path: string) => {
+    const handleNavigation = useCallback((path: string) => {
         return () => {
             if (navigate) {
                 navigate(path);
             }
         };
-    };
+    }, []);
 
     return (
         <nav>
