@@ -10,8 +10,6 @@ const initialNavigationValue: NavigationContextType = {
     navigate: undefined,
 };
 
-console.log(window.location.pathname);
-
 const NavigationContext = createContext<NavigationContextType>(initialNavigationValue);
 
 function NavigationProvider({ children }: { children: ReactElement }) {
