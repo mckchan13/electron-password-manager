@@ -7,87 +7,83 @@ import { requestValidator } from "../lib/Valence/middleware";
 import { ValenceContext } from "../lib/Valence/types";
 
 process.on("loaded", async () => {
-  await main();
+    await main();
 });
 
 process.on("exit", () => {
-  console.log(`Child process ${process.pid} is exiting.`);
+    console.log(`Child process ${process.pid} is exiting.`);
 });
 
 process.on("uncaughtException", (err, origin) => {
-  console.error(err);
-  console.error(origin);
+    console.error(err);
+    console.error(origin);
 });
 
 process.on("unhandledRejection", (err, origin) => {
-  console.error(err);
-  console.error(origin);
+    console.error(err);
+    console.error(origin);
 });
 
 async function main(): Promise<void> {
-  const userInfo = {
-    writablePath: undefined,
-    pathLocationName: undefined,
-  };
+    const userInfo = {
+        writablePath: undefined,
+        pathLocationName: undefined,
+    };
 
-  const processUtilties: {
-    port: MessagePortMain | undefined;
-    db: SqlDatabase | undefined;
-  } = {
-    port: undefined,
-    db: undefined,
-  };
+    const processUtilties: {
+        port: MessagePortMain | undefined;
+        db: SqlDatabase | undefined;
+    } = {
+        port: undefined,
+        db: undefined,
+    };
 
-  const userPathSet = await new Promise<boolean>((resolve) => {
-    process.parentPort.prependOnceListener("message", (event) => {
-      const { message, body } = event.data;
-      userInfo.pathLocationName = message;
-      userInfo.writablePath = body;
-      process.parentPort.postMessage("userPathSet");
-      resolve(true);
+    const userPathSet = await new Promise<boolean>((resolve) => {
+        process.parentPort.prependOnceListener("message", (event) => {
+            const { message, body } = event.data;
+            userInfo.pathLocationName = message;
+            userInfo.writablePath = body;
+            process.parentPort.postMessage("userPathSet");
+            resolve(true);
+        });
     });
-  });
 
-  if (!userPathSet) {
-    console.error("The process was unable to set the user path.");
-  }
+    if (!userPathSet) {
+        console.error("The process was unable to set the user path.");
+    }
 
-  const config: SqlDatabaseConfig = {
-    writablePath: userInfo.writablePath,
-    writablePathLocationName: userInfo.pathLocationName,
-  };
+    const config: SqlDatabaseConfig = {
+        writablePath: userInfo.writablePath,
+        writablePathLocationName: userInfo.pathLocationName,
+    };
 
-  processUtilties.db = new SqlDatabase(config);
+    processUtilties.db = new SqlDatabase(config);
 
-  const db = processUtilties.db;
-  await db.initDb({ loadDummyData: true });
+    const db = processUtilties.db;
+    await db.initDb({ loadDummyData: true });
 
-  const valence = new Valence({ datasources: { sql: db } });
+    const valence = new Valence({ datasources: { sql: db } });
 
-  valence.usePreHook(requestValidator());
+    valence.usePreHook(requestValidator());
 
-  valence.use("getAllPasswords", async (ctx: ValenceContext): Promise<void> => {
-    const ds = ctx.datasources as { sql: SqlDatabase };
-    const passwords = await ds.sql.getAllPasswords();
-    ctx.response.send(passwords);
-  });
+    valence.use("getAllPasswords", async (ctx: ValenceContext): Promise<void> => {
+        const ds = ctx.datasources as { sql: SqlDatabase };
+        const passwords = await ds.sql.getAllPasswords();
+        ctx.response.send(passwords);
+    });
 
-  valence.use("savePassword", async (ctx: ValenceContext): Promise<void> => {
-    const {
-      request: { payload },
-    } = ctx;
-    const {
-      username: name,
-      password,
-      secretKey: secret,
-    } = payload as SavePasswordPayload;
-    const descriptor = "";
-    const ds = ctx.datasources as { sql: SqlDatabase };
-    await ds.sql.savePassword(name, password, descriptor, secret);
-    ctx.response.send("Successfully saved");
-  });
+    valence.use("savePassword", async (ctx: ValenceContext): Promise<void> => {
+        const {
+            request: { payload },
+        } = ctx;
+        const { username: name, password, secretKey: secret } = payload as SavePasswordPayload;
+        const descriptor = "";
+        const ds = ctx.datasources as { sql: SqlDatabase };
+        await ds.sql.savePassword(name, password, descriptor, secret);
+        ctx.response.send("Successfully saved");
+    });
 
-  valence.listen(() => {
-    console.log("Listening on parent port... ");
-  });
+    valence.listen(() => {
+        console.log("Listening on parent port... ");
+    });
 }

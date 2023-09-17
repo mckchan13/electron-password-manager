@@ -115,7 +115,9 @@ export class SqlDatabase {
       }
     );
 
-    console.log(`inside SqlDatabase savePassword ${name}, ${password}, ${descriptor}, ${secret}`)
+    console.log(
+      `inside SqlDatabase savePassword ${name}, ${password}, ${descriptor}, ${secret}`
+    );
 
     const encrypted = await cryptr.encrypt(password, secret);
 
@@ -169,6 +171,11 @@ export class SqlDatabase {
     }
   }
 
+  public closeDb(): void {
+    console.log("Closing database... Goodbye.");
+    this.db.close();
+  }
+
   private loadDummyData(): void {
     const db = this.db;
     try {
@@ -196,10 +203,5 @@ export class SqlDatabase {
         console.error(err);
       }
     }
-  }
-
-  public closeDb(): void {
-    console.log("Closing database... Goodbye.");
-    this.db.close();
   }
 }

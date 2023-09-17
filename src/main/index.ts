@@ -112,7 +112,7 @@ async function main(): Promise<void> {
     // ? until all setup is complete
     const mainWindow = createMainWindow();
 
-    // Open the DevTools.
+    // ! Open the DevTools.
     mainWindow.webContents.openDevTools();
 
     console.log(`App ${app.name} is ready and starting.`);
@@ -153,16 +153,16 @@ async function attachIpcHandlers(): Promise<void> {
   ipcMain.handle("savePassword", handleInvokeRequest);
 }
 
-async function handleInvokeRequest(
-  _event: IpcMainInvokeEvent,
-  request: RequestObject
-): Promise<ResponseObject> {
+async function handleInvokeRequest<
+  T extends RequestObject,
+  K extends ResponseObject
+>(_event: IpcMainInvokeEvent, request: T): Promise<K> {
   const { port1, port2 } = new MessageChannelMain();
   const child = childProcesses.at(-1);
 
   return await new Promise((resolve) => {
     child?.postMessage(request, [port2]);
-    port1.on("message", ({ data }: { data: ResponseObject }) => {
+    port1.on("message", ({ data }: { data: K }) => {
       resolve(data);
       process.nextTick(() => port1.close());
     });
@@ -179,13 +179,12 @@ function forkUtilityProcess(scriptPath: string): UtilityProcess {
     serviceName: "child-utility-process",
   });
 
-  // setup listener to log when the child process has spawned
+  // !setup listener to log when the child process has spawned
   child.once("spawn", () => {
-
     //! When child process has spawned, the stdout property should not be null
     //! Setup listeners to console log whenever there is a console log or error
     //! for debugging the child process
-    
+
     child.stdout?.on("data", (data) => {
       console.log(`[Child Process][stdout]:${data}`);
     });
