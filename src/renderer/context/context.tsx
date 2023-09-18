@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, ReactElement } from "react";
+import { createContext, useState, useEffect, ReactNode } from "react";
 
 export type NavigationContextType = {
     currentPath: string;
@@ -12,7 +12,7 @@ const initialNavigationValue: NavigationContextType = {
 
 const NavigationContext = createContext<NavigationContextType>(initialNavigationValue);
 
-function NavigationProvider({ children }: { children: ReactElement }) {
+function NavigationProvider({ children }: { children: ReactNode }) {
     const [currentPath, setCurrentPath] = useState<string>(window.location.pathname);
 
     useEffect(() => {

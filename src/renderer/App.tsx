@@ -3,6 +3,7 @@ import { RequestObject } from "./hooks";
 import NavBar from "./components/NavBar";
 import EncryptPassword from "./components/EncryptPassword";
 import Route from "./components/Route";
+import Button from "./components/Button";
 
 const App = (): ReactElement => {
     const fetchAllPasswords = async () => {
@@ -31,9 +32,9 @@ const App = (): ReactElement => {
             <Route path="/passwords">
                 <EncryptPassword />
             </Route>
-            <button className="border border-black" onClick={fetchAllPasswords}>
-                Get All Passwords{" "}
-            </button>
+            <Button primary outline rounded onClick={fetchAllPasswords}>
+                Get Passwords
+            </Button>
         </div>
     );
 };

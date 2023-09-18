@@ -1,7 +1,7 @@
-import { ReactElement, useContext, useCallback } from "react";
+import { useContext, useCallback, ReactNode } from "react";
 import NavigationContext from "../context/context";
 
-const NavBar = (): ReactElement => {
+const NavBar = (): ReactNode => {
     const { navigate } = useContext(NavigationContext);
 
     const handleNavigation = useCallback((path: string) => {
