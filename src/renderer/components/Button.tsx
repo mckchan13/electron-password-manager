@@ -1,9 +1,4 @@
-import {
-    FunctionComponentElement,
-    HTMLAttributes,
-    MouseEventHandler,
-    PropsWithChildren,
-} from "react";
+import { HTMLAttributes, MouseEventHandler, PropsWithChildren, ReactNode } from "react";
 
 import classNames from "classnames";
 
@@ -26,17 +21,21 @@ export type ButtonPropsType = PropsWithChildren<
 >;
 
 function checkExclusivity(props: ButtonPropsType): void {
-    Object.keys(props).reduce((acc, propName) => {
-        if ((exclusiveProps as readonly string[]).includes(propName) && acc === 1) {
-            throw new SyntaxError("More than one exclusive styling props was specified.");
-        } else if ((exclusiveProps as readonly string[]).includes(propName)) {
-            return (acc += 1);
+    const specifiedExclusiveProps = Object.keys(props).reduce((acc, propName) => {
+        if ((exclusiveProps as readonly string[]).includes(propName)) {
+            acc.push(propName);
         }
         return acc;
-    }, 0);
+    }, new Array<string>());
+
+    if (specifiedExclusiveProps.length > 1) {
+        console.error(
+            `More than one exclusive prop was specified: ${specifiedExclusiveProps.join(", ")} `
+        );
+    }
 }
 
-function Button(props: ButtonPropsType): FunctionComponentElement<ButtonPropsType> {
+function Button(props: ButtonPropsType): ReactNode {
     const { children, primary, secondary, success, warning, danger, outline, rounded, ...rest } =
         props;
 

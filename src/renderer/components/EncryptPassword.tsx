@@ -1,7 +1,7 @@
-import { ReactElement } from "react";
+import { ReactNode } from "react";
 import useEncryptPasswordState from "../hooks/useEncryptPasswordState";
 
-const EncryptPassword = (): ReactElement => {
+const EncryptPassword = (): ReactNode => {
   const {
     username,
     password,

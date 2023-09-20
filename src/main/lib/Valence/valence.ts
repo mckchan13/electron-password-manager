@@ -1,25 +1,26 @@
 import { MessagePortMain } from "electron";
-import { SqlDatabase } from "../../db";
 import { RequestObject } from "../../../renderer/hooks";
 import {
   ValenceMiddleware,
-  ValenceRequest,
-  ValenceContext,
-  ValenceResponseStatus,
   ElectronPorts,
+  Datasources,
 } from "./types";
+import ValenceContextBuilder from "./ContextBuilder";
 
 export class Valence {
+  private contextBuilder = new ValenceContextBuilder();
+  private routesMap = new Map<string, ValenceMiddleware[]>();
+  private preHooks: ValenceMiddleware[] = [];
   private process: NodeJS.Process;
-  private datasources: { sql?: SqlDatabase };
-  private routesMap: Map<string, ValenceMiddleware[]>;
-  private preHooks: ValenceMiddleware[];
 
   constructor(public config?: { datasources?: unknown }) {
     this.process = process;
-    this.datasources = this.config?.datasources ?? {};
-    this.preHooks = [];
-    this.routesMap = new Map<string, ValenceMiddleware[]>();
+
+    if (this.config && this.config.datasources) {
+      this.contextBuilder.loadDatasources(
+        this.config.datasources as Datasources<string, unknown>
+      );
+    }
   }
 
   public usePreHook(...middleware: ValenceMiddleware[]): Valence {
@@ -38,9 +39,15 @@ export class Valence {
     return this;
   }
 
-  public addDatasource<D = unknown>(key: string, database: D): void {
-    const datasources = this.datasources as Record<typeof key, typeof database>;
-    datasources[key] = database;
+  public loadDatasource(
+    datasources: Datasources<string, unknown>
+  ): ValenceContextBuilder {
+    this.contextBuilder.loadDatasources(datasources);
+    return this.contextBuilder;
+  }
+
+  public addDatasource<T = unknown>(key: string, datasource: T): void {
+    this.contextBuilder.setDatasource(key, datasource);
   }
 
   public listen(callback?: (port: ElectronPorts) => void): void;
@@ -86,7 +93,13 @@ export class Valence {
       );
     }
 
-    const ctx = this.contextBuilder(request, port);
+    // const ctx = this.buildContext(request, port);
+    const ctx = this.contextBuilder
+      .loadRequest(request)
+      .loadPort(port)
+      .loadResponse()
+      .build();
+
     let prevIdx = -1;
 
     const runner = async (idx: number): Promise<void> => {
@@ -105,44 +118,5 @@ export class Valence {
     for (const [route, pipeline] of this.routesMap) {
       this.routesMap.set(route, [...this.preHooks, ...pipeline]);
     }
-  }
-
-  private contextBuilder(
-    request: ValenceRequest,
-    port: MessagePortMain
-  ): ValenceContext {
-    const datasources = this.datasources;
-    const { method, route } = request;
-    const context = {
-      datasources,
-      body: {},
-      request,
-      response: {
-        method,
-        route,
-        status: "pending",
-        payload: undefined,
-        port,
-        setStatus: function (status: ValenceResponseStatus) {
-          this.status = status;
-        },
-        send: function (payload: unknown): void {
-          this.setStatus("success");
-          const { method, route, port, status } = this;
-          port.postMessage({
-            method,
-            route,
-            status,
-            payload,
-          });
-          port.start();
-        },
-      },
-    };
-
-    context.response.setStatus.bind(context.response);
-    context.response.send.bind(context.response);
-
-    return context;
   }
 }

@@ -6,7 +6,7 @@ import Route from "./components/Route";
 import Button from "./components/Button";
 
 const App = (): ReactElement => {
-    const fetchAllPasswords = async () => {
+    const handleFetchPasswords = async () => {
         const request: RequestObject = {
             method: "GET",
             route: "getAllPasswords",
@@ -19,7 +19,7 @@ const App = (): ReactElement => {
 
     useEffect(() => {
         (async () => {
-            await fetchAllPasswords();
+            await handleFetchPasswords();
         })();
     }, []);
 
@@ -32,7 +32,7 @@ const App = (): ReactElement => {
             <Route path="/passwords">
                 <EncryptPassword />
             </Route>
-            <Button primary outline rounded onClick={fetchAllPasswords}>
+            <Button primary secondary outline rounded onClick={handleFetchPasswords}>
                 Get Passwords
             </Button>
         </div>
