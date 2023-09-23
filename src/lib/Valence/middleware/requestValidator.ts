@@ -1,10 +1,16 @@
 import { ValenceContext, ValenceMiddleware } from "../types";
 
-export function requestValidator(): ValenceMiddleware {
+export function requestValidator(
+  callback?: ValenceMiddleware
+): ValenceMiddleware {
   return function (
     ctx: ValenceContext,
     next: () => void | Promise<void>
   ): void | Promise<void> {
+    if (callback) {
+      return callback(ctx, next);
+    }
+
     const {
       request: { route, method, payload },
       response: { port },

@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { ValenceMethods } from "../../lib/Valence";
 
 export type RequestHook<M = unknown, R = unknown> = (message: M) => Promise<R>;
 
 export type RequestObject<T = unknown, K = string> = {
-  method: "GET" | "POST" | "PUT" | "DELETE";
+  method: ValenceMethods
   route: K;
   payload: T;
   channel: string;
