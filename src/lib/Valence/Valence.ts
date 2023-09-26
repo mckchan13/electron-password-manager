@@ -18,7 +18,8 @@ export class Valence {
   /**
    * @constructor Provide an optional config objects that specifies datasources
    * will become available in the context object of the middleware functions.
-   * @param config An optional configuration object houses any datasources (databases, external APIs).
+   * @param { {config?: {datasources?: ValenceDatasources}} } config
+   * An optional configuration object houses any datasources (databases, external APIs).
    * Datasources will be available in the context object of the middleware functions
    */
   constructor(public config?: { datasources?: ValenceDatasources }) {
@@ -31,9 +32,9 @@ export class Valence {
 
   /**
    * A method to append middleware functions that run before all routes execute.
-   * @param middleware Any middleware functions that will receive a context object
+   * @param {ValenceMiddleware[]} middleware Any middleware functions that will receive a context object
    * and a call to the next function in the middleware pipeline.
-   * @return Valences instance - Optionally chain additional calls to usePreHook
+   * @return {Valence} Valences instance - Optionally chain additional calls to usePreHook
    */
   public usePreHook(...middleware: ValenceMiddleware[]): Valence {
     this.preHooks.push(...middleware);
@@ -42,10 +43,10 @@ export class Valence {
 
   /**
    * A method to append middleware functions that runs on the specified route.
-   * @param routeName The specified route to run the middleware functions on.
-   * @param middleware Any middleware functions that will receive a context object
+   * @param {string} routeName The specified route to run the middleware functions on.
+   * @param {ValenceMiddleware[]} middleware Any middleware functions that will receive a context object
    * and a call to the next function in the middleware pipeline.
-   * @return Valences instance - Optionally chain additional calls to use
+   * @return {Valence} Returns the Valence instance, optionally chain additional calls to use
    */
   public use(routeName: string, ...middleware: ValenceMiddleware[]): Valence {
     if (!this.routesMap.has(routeName)) {
@@ -63,15 +64,15 @@ export class Valence {
    * @param datasources A user specified object containing references to the datasources.
    * @return void
    */
-  public loadDatasource(
-    datasources: ValenceDatasources<string, unknown>
+  public loadDatasource<T = unknown>(
+    datasources: ValenceDatasources<string, T>
   ): void {
     this.contextBuilder.loadDatasources(datasources);
   }
 
   /**
    * A method to add a datasource. Datasources will be available via the context object in middleware functions.
-   * @param key A key to identify the data source in the datasource object.
+   * @param {string} key A key to identify the data source in the datasource object.
    * @param datasources A user specified object containing references to the datasources.
    */
   public addDatasource<T = unknown>(key: string, datasource: T): void {

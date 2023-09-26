@@ -1,4 +1,4 @@
-import { RequestObject, ResponseObject, ValenceMethods } from "../..";
+import { RequestObject, ValenceMethods } from "../..";
 import { Deferred } from "../../../DeferredPromise";
 
 export type ValenceRequestResult<T = unknown> = {
@@ -38,9 +38,9 @@ function useValenceRequest(
     };
   }
 
-  const deferred = new Deferred<ResponseObject, Error>();
+  const deferred = new Deferred();
 
-  const response: ValenceRequestResult = {
+  const requestResult: ValenceRequestResult = {
     status: "loading",
     result: deferred.promise,
     setStatus: function (newStatus: string) {
@@ -48,20 +48,20 @@ function useValenceRequest(
     },
   };
 
-  response.setStatus.bind(response);
+  requestResult.setStatus.bind(requestResult);
 
   window.valenceAPI
     .fetch(request)
     .then((data) => {
-      response.setStatus("success");
+      requestResult.setStatus("success");
       deferred.resolve(data);
     })
     .catch((reason) => {
-      response.setStatus("failed");
+      requestResult.setStatus("failed");
       deferred.reject(reason);
     });
 
-  return response;
+  return requestResult;
 }
 
 export default useValenceRequest;
