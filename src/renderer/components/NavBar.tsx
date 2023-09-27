@@ -1,30 +1,26 @@
-import { useContext, useCallback, ReactNode } from "react";
-import NavigationContext from "../context/context";
+import { ReactNode } from "react";
+import Link from "./Link";
 
 const NavBar = (): ReactNode => {
-  const { navigate } = useContext(NavigationContext);
+  const links = [
+    { label: "Home", path: "/" },
+    { label: "Passwords", path: "/passwords" },
+    { label: "Settings", path: "/settings" },
+  ];
 
-  const handleNavigation = useCallback((path: string) => {
-    return () => {
-      if (navigate) {
-        navigate(path);
-      }
-    };
-  }, []);
+  const renderedLinks = links.map(({ label, path }) => {
+    return (
+      <li key={label} className="flex-1 text-center text-gray-100 border">
+        <Link key={label} to={path}>
+          {label}
+        </Link>
+      </li>
+    );
+  });
 
   return (
     <nav>
-      <ul className="flex gap-2 py-3 bg-slate-500">
-        <li className="flex-1 text-center text-gray-100 border">
-          <button onClick={handleNavigation("/")}>Home</button>
-        </li>
-        <li className="flex-1 text-center text-gray-100 border">
-          <button onClick={handleNavigation("/passwords")}>Passwords</button>
-        </li>
-        <li className="flex-1 text-center text-gray-100 border">
-          <button onClick={handleNavigation("/settings")}>Settings</button>
-        </li>
-      </ul>
+      <ul className="flex gap-2 py-3 bg-slate-500">{renderedLinks}</ul>
     </nav>
   );
 };

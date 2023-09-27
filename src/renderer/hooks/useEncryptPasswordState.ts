@@ -19,7 +19,7 @@ export type ResponseObject<T = unknown, K = unknown> = {
 export type SavePasswordPayload = {
   username: string;
   password: string;
-  secretKey: string;
+  secret: string;
 };
 
 export type FormFields = {
@@ -64,7 +64,7 @@ function useEncryptPasswordState() {
       payload: {
         username,
         password,
-        secretKey,
+        secret: secretKey,
       },
     };
 

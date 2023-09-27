@@ -1,12 +1,7 @@
-import {
-  MouseEvent,
-  ReactElement,
-  useEffect,
-  useState,
-} from "react";
+import { MouseEvent, ReactElement, useEffect, useState } from "react";
 import { RequestObject } from "./hooks";
 import NavBar from "./components/NavBar";
-import EncryptPassword from "./components/EncryptPassword";
+import Form from "./components/Form";
 import Route from "./components/Route";
 import Button from "./components/Button";
 
@@ -49,7 +44,7 @@ const App = (): ReactElement => {
         <div>Home</div>
       </Route>
       <Route path="/passwords">
-        <EncryptPassword />
+        <Form />
       </Route>
       <Button primary outline rounded onClick={handleFetchPasswords}>
         Get Passwords

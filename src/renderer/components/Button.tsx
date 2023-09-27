@@ -2,7 +2,7 @@ import {
   HTMLAttributes,
   MouseEventHandler,
   PropsWithChildren,
-  ReactNode,
+  ReactElement,
 } from "react";
 
 import classNames from "classnames";
@@ -31,7 +31,7 @@ export type ButtonPropsType = PropsWithChildren<
   ButtonNonExclusiveProps & ButtonExclusiveProps & HTMLAttributes<HTMLElement>
 >;
 
-function checkExclusivity(props: ButtonPropsType): void {
+function assertExclusivity(props: ButtonPropsType): void {
   const specifiedExclusiveProps = Object.keys(props).reduce((acc, propName) => {
     if ((exclusiveProps as readonly string[]).includes(propName)) {
       acc.push(propName);
@@ -48,7 +48,7 @@ function checkExclusivity(props: ButtonPropsType): void {
   }
 }
 
-function Button(props: ButtonPropsType): ReactNode {
+function Button(props: ButtonPropsType): ReactElement {
   const {
     children,
     primary,
@@ -61,7 +61,7 @@ function Button(props: ButtonPropsType): ReactNode {
     ...rest
   } = props;
 
-  checkExclusivity(props);
+  assertExclusivity(props);
 
   const classes = classNames(
     rest.className,

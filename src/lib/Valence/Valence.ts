@@ -13,6 +13,9 @@ export class Valence {
   private contextBuilder = new ValenceContextBuilder();
   private routesMap = new Map<string, ValenceRoute>();
   private preHooks: ValenceMiddleware[] = [];
+  // private preHooksExecutor:
+  //   | ((ctx: ValenceContext) => void | Promise<void>)
+  //   | undefined = undefined;
   private process: NodeJS.Process;
 
   /**
@@ -125,13 +128,9 @@ export class Valence {
   ): Promise<void> {
     const route = this.routesMap.get(request.route);
 
-    if (route === undefined) {
-      throw new Error("Route not found");
-    }
-
-    if (route.executor === undefined) {
-      throw new Error("No executor found");
-    }
+    this.assertsValueIsDefined(route, "Route not found.");
+    this.assertsValueIsDefined(route.executor, "Executor not found.");
+    // this.assertsValueIsDefined(this.preHooksExecutor, "Prehooks executor is undefined.");  
 
     const ctx = this.contextBuilder
       .loadRequest(request)
@@ -139,10 +138,12 @@ export class Valence {
       .loadResponse()
       .build();
 
+    // await this.preHooksExecutor(ctx);
     await route.executor(ctx);
   }
 
   private buildAllPipelines(): void {
+    // this.preHooksExecutor = this.buildPipelineExecutor(this.preHooks);
     for (const [, route] of this.routesMap) {
       const { pipeline } = route;
       route.pipeline = [...this.preHooks, ...pipeline];
@@ -164,5 +165,14 @@ export class Valence {
 
       await runner(0);
     };
+  }
+
+  private assertsValueIsDefined<T>(
+    value: T,
+    message?: string
+  ): asserts value is NonNullable<T> {
+    if (value === undefined || value === null) {
+      throw new Error(message);
+    }
   }
 }

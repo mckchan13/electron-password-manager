@@ -74,14 +74,14 @@ async function main(): Promise<void> {
       request: { payload },
     } = ctx;
     const {
-      username: name,
+      username,
       password,
-      secretKey: secret,
+      secret,
     } = payload as SavePasswordPayload;
     const descriptor = "";
     const ds = ctx.datasources as { sql: SqlDatabase };
-    await ds.sql.savePassword(name, password, descriptor, secret);
-    ctx.response.send("Successfully saved");
+    const encrypted = await ds.sql.savePassword(username, password, descriptor, secret);
+    ctx.response.send(encrypted);
   });
 
   valence.listen(() => {
