@@ -7,7 +7,7 @@ const sqlite3V = sqlite3.verbose();
 
 export type PasswordEntry = {
   id?: number;
-  name: string;
+  username: string;
   password: string;
   descriptor: string;
 };

@@ -1,6 +1,6 @@
 export type FormData = ReturnType<typeof createInitialState>;
 
-export type ActionType = keyof FormData | "reset";
+export type ActionType = Uppercase<keyof FormData> | "RESET";
 
 export type Action<T extends string = string, P = string> = {
   type: T;
@@ -26,22 +26,22 @@ function formChangeReducer(
   action: Action<ActionType>
 ): FormData {
   switch (action.type) {
-    case "username":
+    case "USERNAME":
       return {
         ...state,
         username: action.payload,
       };
-    case "password":
+    case "PASSWORD":
       return {
         ...state,
         password: action.payload,
       };
-    case "secret":
+    case "SECRET":
       return {
         ...state,
         secret: action.payload,
       };
-    case "reset":
+    case "RESET":
       return {
         username: "",
         password: "",

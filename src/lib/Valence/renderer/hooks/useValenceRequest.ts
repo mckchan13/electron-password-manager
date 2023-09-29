@@ -9,32 +9,50 @@ export type ValenceRequestResult<T = unknown> = {
 
 function useValenceRequest(requestObject: RequestObject): ValenceRequestResult;
 function useValenceRequest(
-  channel: string,
   method: ValenceMethods,
+  channel: string,
   route: string,
   payload?: unknown
 ): ValenceRequestResult;
-function useValenceRequest(
-  channelOrRequestObject: string | RequestObject,
-  method?: ValenceMethods,
+function useValenceRequest<T = unknown>(
+  methodOrRequestObject: ValenceMethods | RequestObject,
+  channel?: string,
   route?: string,
-  payload?: unknown
+  payload?: T
 ): ValenceRequestResult {
   let request: RequestObject;
 
-  if (typeof channelOrRequestObject === "object") {
-    const { method, route } = channelOrRequestObject;
-    assertValueIsNonNullish(method, "Request method is not defined.");
-    assertValueIsNonNullish(route, "Request route is not defined.");
-    request = channelOrRequestObject;
+  assertValueIsNonNullish(
+    methodOrRequestObject,
+    "Null or undefined cannot be passed as the first argument."
+  );
+
+  if (typeof methodOrRequestObject === "object") {
+    const { method, route, channel } = methodOrRequestObject;
+
+    const assertionCases = [
+      { value: method, message: "Request method is not defined" },
+      { value: route, message: "Request route is not defined" },
+      { value: channel, message: "Request channel is not defined" },
+    ];
+
+    for (const { value, message } of assertionCases) {
+      assertValueIsNonNullish(value, message);
+    }
+
+    request = methodOrRequestObject;
   } else {
-    assertValueIsNonNullish(method, "Request method is not defined.");
+    assertValueIsNonNullish(
+      methodOrRequestObject as ValenceMethods,
+      "Request method is not defined."
+    );
+    assertValueIsNonNullish(channel, "Request channel is not defined.");
     assertValueIsNonNullish(route, "Request route is not defined.");
     request = {
-      method,
+      method: methodOrRequestObject,
       route,
       payload,
-      channel: channelOrRequestObject,
+      channel,
     };
   }
 

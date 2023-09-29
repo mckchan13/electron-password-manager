@@ -1,41 +1,22 @@
-import { MouseEvent, ReactElement, useEffect, useState } from "react";
-import { RequestObject } from "./hooks";
+import { ReactElement } from "react";
 import NavBar from "./components/NavBar";
 import Form from "./components/Form";
 import Route from "./components/Route";
 import Button from "./components/Button";
+import { PasswordEntry } from "../main/db";
+
+import useFetchPasswords from "./hooks/useFetchAllPasswords";
 
 const App = (): ReactElement => {
-  console.log("App is rendering");
-  const [passwords, setPasswords] = useState<unknown[]>([]);
-  console.log(passwords);
+  const { passwords, handleFetchPasswords } = useFetchPasswords();
 
-  const Rows = passwords.map((value: any) => {
-    return <div key={value.id}>{value.name}</div>;
-  });
-
-  const handleFetchPasswords = async (event?: MouseEvent) => {
-    if (event !== undefined) {
-      event.preventDefault();
+  const Rows = passwords.map(
+    ({ id, username, password, descriptor }: PasswordEntry) => {
+      return <div key={id}>{username + " " + password + " " + descriptor}</div>;
     }
+  );
 
-    const request: RequestObject = {
-      method: "GET",
-      route: "getAllPasswords",
-      channel: "getAllPasswords",
-      payload: undefined,
-    };
-
-    const response = await window.electronAPI.fetch(request);
-    console.log(response);
-    setPasswords(response.payload);
-  };
-
-  useEffect(() => {
-    (async () => {
-      await handleFetchPasswords();
-    })();
-  }, []);
+  console.log(Rows);
 
   return (
     <div>

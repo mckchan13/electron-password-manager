@@ -8,7 +8,7 @@ import {
 } from "electron";
 
 import { handleFileOpen, handleEncryptPassword } from "./handlers";
-import { handleValenceRequest } from "../lib/Valence/main/ValenceMain";
+import { handleValenceRequest } from "../lib/Valence/main/handleValenceRequest";
 
 export type PathLocationName = Parameters<typeof app.getPath>[0];
 
@@ -198,6 +198,6 @@ function assertsChildProcessHasSpawned<T = UtilityProcess | undefined>(
   child: T
 ): asserts child is NonNullable<T> {
   if (child === undefined || child === null) {
-    throw new Error();
+    throw new Error("Error in spawning child process");
   }
 }
