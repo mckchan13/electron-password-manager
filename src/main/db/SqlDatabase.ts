@@ -1,13 +1,13 @@
 import path from "node:path";
 import sqlite3 from "sqlite3";
-import * as cryptr from "../lib/cryptr/cryptr";
+import * as cryptr from "../../lib/cryptr/cryptr";
 import { PathLocationName } from "../index";
 
 const sqlite3V = sqlite3.verbose();
 
 export type PasswordEntry = {
   id?: number;
-  name: string;
+  username: string;
   password: string;
   descriptor: string;
 };
@@ -57,7 +57,7 @@ export class SqlDatabase {
     return new Promise((resolve, reject) => {
       try {
         db.each(
-          "SELECT rowid AS id, name, descriptor, password FROM passwords",
+          "SELECT rowid AS id, username, descriptor, password FROM passwords",
           (err, row: PasswordEntry) => {
             if (err instanceof Error) {
               console.error("error", err);
@@ -87,7 +87,7 @@ export class SqlDatabase {
     const rows: PasswordEntry[] = [];
     const db = this.db;
     db.get(
-      `SELECT id, name, password, descriptor FROM passwords WHERE id = ?`,
+      `SELECT id, username, password, descriptor FROM passwords WHERE id = ?`,
       id,
       (err: Error, row: PasswordEntry) => {
         if (err instanceof Error) {
@@ -100,14 +100,14 @@ export class SqlDatabase {
   }
 
   public async savePassword(
-    name: string,
+    username: string,
     password: string,
     descriptor: string,
     secret: string
-  ): Promise<void> {
+  ): Promise<string> {
     const db = this.db;
     const stmt = db.prepare(
-      `INSERT INTO passwords VALUES ($name, $pass, $desc);`,
+      `INSERT INTO passwords VALUES ($username, $pass, $desc);`,
       (_: sqlite3.Statement, err: Error) => {
         if (err instanceof Error) {
           console.error(err.message);
@@ -116,16 +116,18 @@ export class SqlDatabase {
     );
 
     console.log(
-      `inside SqlDatabase savePassword ${name}, ${password}, ${descriptor}, ${secret}`
+      `inside SqlDatabase savePassword ${username}, ${password}, ${descriptor}, ${secret}`
     );
 
     const encrypted = await cryptr.encrypt(password, secret);
 
-    stmt.run([name, encrypted, descriptor], (_: unknown, err: Error) => {
+    stmt.run([username, encrypted, descriptor], (_: unknown, err: Error) => {
       if (err instanceof Error) {
         console.error(err.message);
       }
     });
+
+    return encrypted;
   }
 
   public addMultiplePasswords(passwords: PasswordEntry[]): void {
@@ -149,7 +151,7 @@ export class SqlDatabase {
       db.serialize(() => {
         db.run(
           `CREATE TABLE IF NOT EXISTS passwords (
-            name TEXT NOT NULL UNIQUE,
+            username TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
             descriptor TEXT
             );`,
@@ -181,7 +183,7 @@ export class SqlDatabase {
     try {
       console.log("Now preparing insert statement...");
       const stmt = db.prepare(
-        `INSERT INTO passwords VALUES ($name, $pass, $desc);`
+        `INSERT INTO passwords VALUES ($username, $pass, $desc);`
       );
 
       for (let i = 0; i < 10; i++) {

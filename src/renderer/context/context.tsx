@@ -1,43 +1,51 @@
-import { createContext, useState, useEffect, ReactElement } from "react";
+import { createContext, useState, useEffect, ReactNode } from "react";
 
 export type NavigationContextType = {
-    currentPath: string;
-    navigate: ((to: string) => void) | undefined;
+  currentPath: string;
+  navigate: ((to: string) => void) | undefined;
 };
 
 const initialNavigationValue: NavigationContextType = {
-    currentPath: window.location.pathname,
-    navigate: undefined,
+  currentPath: window.location.pathname,
+  navigate: undefined,
 };
 
-const NavigationContext = createContext<NavigationContextType>(initialNavigationValue);
+const NavigationContext = createContext<NavigationContextType>(
+  initialNavigationValue
+);
 
-function NavigationProvider({ children }: { children: ReactElement }) {
-    const [currentPath, setCurrentPath] = useState<string>(window.location.pathname);
+function NavigationProvider({ children }: { children: ReactNode }) {
+  const [currentPath, setCurrentPath] = useState<string>(
+    window.location.pathname
+  );
 
-    useEffect(() => {
-        const handler = () => {
-            setCurrentPath(window.location.pathname);
-        };
-
-        window.addEventListener("popstate", handler);
-
-        return () => {
-            window.removeEventListener("popstate", handler);
-        };
-    }, []);
-
-    const navigate = (to: string): void => {
-        window.history.pushState({}, "", to);
-        setCurrentPath(to);
+  useEffect(() => {
+    const handler = () => {
+      setCurrentPath(window.location.pathname);
     };
 
-    const value = {
-        currentPath,
-        navigate,
-    };
+    window.addEventListener("popstate", handler);
 
-    return <NavigationContext.Provider value={value}>{children}</NavigationContext.Provider>;
+    return () => {
+      window.removeEventListener("popstate", handler);
+    };
+  }, []);
+
+  const navigate = (to: string): void => {
+    window.history.pushState({}, "", to);
+    setCurrentPath(to);
+  };
+
+  const value = {
+    currentPath,
+    navigate,
+  };
+
+  return (
+    <NavigationContext.Provider value={value}>
+      {children}
+    </NavigationContext.Provider>
+  );
 }
 
 export { NavigationProvider };

@@ -1,41 +1,38 @@
-import { ReactElement, useEffect } from "react";
-import { RequestObject } from "./hooks";
+import { ReactElement } from "react";
 import NavBar from "./components/NavBar";
-import EncryptPassword from "./components/EncryptPassword";
+import Form from "./components/Form";
 import Route from "./components/Route";
+import Button from "./components/Button";
+import { PasswordEntry } from "../main/db";
+
+import useFetchPasswords from "./hooks/useFetchAllPasswords";
 
 const App = (): ReactElement => {
-    const fetchAllPasswords = async () => {
-        const request: RequestObject = {
-            method: "GET",
-            route: "getAllPasswords",
-            channel: "getAllPasswords",
-            payload: undefined,
-        };
-        const passwords = await window.electronAPI.fetch(request);
-        console.log(passwords);
-    };
+  const { passwords, handleFetchPasswords } = useFetchPasswords();
 
-    useEffect(() => {
-        (async () => {
-            await fetchAllPasswords();
-        })();
-    }, []);
+  const Rows = passwords.map(
+    ({ id, username, password, descriptor }: PasswordEntry) => {
+      return <div key={id}>{username + " " + password + " " + descriptor}</div>;
+    }
+  );
 
-    return (
-        <div>
-            <NavBar />
-            <Route path="/">
-                <div>Home</div>
-            </Route>
-            <Route path="/passwords">
-                <EncryptPassword />
-            </Route>
-            <button className="border border-black" onClick={fetchAllPasswords}>
-                Get All Passwords{" "}
-            </button>
-        </div>
-    );
+  console.log(Rows);
+
+  return (
+    <div>
+      <NavBar />
+      <Route path="/">
+        <div>Home</div>
+      </Route>
+      <Route path="/passwords">
+        <Form />
+      </Route>
+      <Button primary outline rounded onClick={handleFetchPasswords}>
+        Get Passwords
+      </Button>
+      {Rows.length && Rows}
+    </div>
+  );
 };
 
 export default App;

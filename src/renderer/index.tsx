@@ -7,9 +7,9 @@ const rootElement = document.getElementById("root") as HTMLElement;
 const root = createRoot(rootElement);
 
 root.render(
-    <React.StrictMode>
-        <NavigationProvider>
-            <App />
-        </NavigationProvider>
-    </React.StrictMode>
+  <React.StrictMode>
+    <NavigationProvider>
+      <App />
+    </NavigationProvider>
+  </React.StrictMode>
 );

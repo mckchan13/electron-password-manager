@@ -1,22 +1,18 @@
-import { ReactElement } from "react";
+import { PropsWithChildren, ReactNode } from "react";
 import useNavigation from "../hooks/useNavigation";
 
-export interface ChildrenProps {
-    children: ReactElement;
+export interface RouteProps {
+  path: string;
 }
 
-export interface RouteProps extends ChildrenProps {
-    path: string;
-}
+function Route({ children, path }: PropsWithChildren<RouteProps>): ReactNode {
+  const { currentPath } = useNavigation();
 
-function Route({ children, path }: RouteProps) {
-    const { currentPath } = useNavigation();
+  if (path === currentPath) {
+    return children;
+  }
 
-    if (path === currentPath) {
-        return children;
-    }
-
-    return null;
+  return null;
 }
 
 export default Route;
