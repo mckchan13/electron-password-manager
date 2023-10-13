@@ -1,14 +1,11 @@
 import { useReducer, useState, ReactElement } from "react";
-import { FormEvent, InputEvent, RequestObject } from "../types/types";
-
 import useFormChangeReducer, {
   ActionType,
   FormData,
 } from "../hooks/useFormChangeReducer";
+import { FormEvent, InputEvent, RequestObject } from "../types/types";
 
-type FieldData = { label: string; action: ActionType; value: string };
-
-const { createInitialState, formChangeReducer, actionCreator } =
+const { createInitialState, formChangeReducer, actionCreator, ACTIONS } =
   useFormChangeReducer();
 
 const Form = (): ReactElement => {
@@ -20,9 +17,9 @@ const Form = (): ReactElement => {
   );
 
   const formFields = [
-    { label: "Username", action: "USERNAME", value: username },
-    { label: "Password", action: "PASSWORD", value: password },
-    { label: "Secret", action: "SECRET", value: secret },
+    { label: "Username", action: ACTIONS.username, value: username },
+    { label: "Password", action: ACTIONS.password, value: password },
+    { label: "Secret", action: ACTIONS.secret, value: secret },
   ] satisfies FieldData[];
 
   const renderedFormFields = formFields.map(({ label, action, value }) => {
@@ -87,3 +84,5 @@ const Form = (): ReactElement => {
 };
 
 export default Form;
+
+export type FieldData = { label: string; action: ActionType; value: string };

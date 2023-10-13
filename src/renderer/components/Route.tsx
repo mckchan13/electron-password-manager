@@ -2,17 +2,17 @@ import { PropsWithChildren, ReactNode } from "react";
 import useNavigation from "../hooks/useNavigation";
 
 export interface RouteProps {
-    path: string;
+  path: string;
 }
 
 function Route({ children, path }: PropsWithChildren<RouteProps>): ReactNode {
-    const { currentPath } = useNavigation();
+  const { currentPath } = useNavigation();
 
-    if (path === currentPath) {
-        return children;
-    }
+  if (path === currentPath) {
+    return children;
+  }
 
-    return null;
+  return null;
 }
 
 export default Route;

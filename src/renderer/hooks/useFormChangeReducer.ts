@@ -1,24 +1,28 @@
-export type FormData = ReturnType<typeof createInitialState>;
-
-export type ActionType = Uppercase<keyof FormData> | "RESET";
-
-export type Action<T extends string = string, P = string> = {
-  type: T;
-  payload: P;
-};
-
 function useFormChangeReducer() {
   return {
     createInitialState,
     formChangeReducer,
     actionCreator,
+    ACTIONS,
   };
 }
 
 export default useFormChangeReducer;
 
+const ACTIONS = {
+  username: "USERNAME",
+  password: "PASSWORD",
+  secret: "SECRET",
+  reset: "RESET",
+  submit: "SUBMIT",
+} satisfies Record<keyof FormData | "reset" | "submit", ActionType>;
+
 function createInitialState() {
-  return { username: "", password: "", secret: "" };
+  return {
+    username: "",
+    password: "",
+    secret: "",
+  };
 }
 
 function formChangeReducer(
@@ -42,11 +46,10 @@ function formChangeReducer(
         secret: action.payload,
       };
     case "RESET":
-      return {
-        username: "",
-        password: "",
-        secret: "",
-      };
+      return createInitialState();
+    case "SUBMIT": {
+      return state;
+    }
     default:
       return state;
   }
@@ -58,3 +61,12 @@ function actionCreator(type: ActionType, payload: string): Action<ActionType> {
     payload,
   };
 }
+
+export type FormData = ReturnType<typeof createInitialState>;
+
+export type ActionType = Uppercase<keyof FormData> | "RESET" | "SUBMIT";
+
+export type Action<T extends string = string, P = string> = {
+  type: T;
+  payload: P;
+};

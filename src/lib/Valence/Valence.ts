@@ -130,7 +130,7 @@ export class Valence {
 
     this.assertsValueIsDefined(route, "Route not found.");
     this.assertsValueIsDefined(route.executor, "Executor not found.");
-    // this.assertsValueIsDefined(this.preHooksExecutor, "Prehooks executor is undefined.");  
+    // this.assertsValueIsDefined(this.preHooksExecutor, "Prehooks executor is undefined.");
 
     const ctx = this.contextBuilder
       .loadRequest(request)

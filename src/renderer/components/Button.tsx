@@ -15,39 +15,6 @@ const exclusiveProps = [
   "danger",
 ] as const;
 
-export type ButtonPurposeType = (typeof exclusiveProps)[number];
-
-export type ButtonExclusiveProps = {
-  [P in ButtonPurposeType]?: boolean;
-};
-
-export interface ButtonNonExclusiveProps {
-  outline?: boolean;
-  rounded?: boolean;
-  onClick?: MouseEventHandler<HTMLButtonElement>;
-}
-
-export type ButtonPropsType = PropsWithChildren<
-  ButtonNonExclusiveProps & ButtonExclusiveProps & HTMLAttributes<HTMLElement>
->;
-
-function assertExclusivity(props: ButtonPropsType): void {
-  const specifiedExclusiveProps = Object.keys(props).reduce((acc, propName) => {
-    if ((exclusiveProps as readonly string[]).includes(propName)) {
-      acc.push(propName);
-    }
-    return acc;
-  }, new Array<string>());
-
-  if (specifiedExclusiveProps.length > 1) {
-    console.error(
-      `More than one exclusive prop was specified: ${specifiedExclusiveProps.join(
-        ", "
-      )} `
-    );
-  }
-}
-
 function Button(props: ButtonPropsType): ReactElement {
   const {
     children,
@@ -92,3 +59,36 @@ function Button(props: ButtonPropsType): ReactElement {
 }
 
 export default Button;
+
+function assertExclusivity(props: ButtonPropsType): void {
+  const specifiedExclusiveProps = Object.keys(props).reduce((acc, propName) => {
+    if ((exclusiveProps as readonly string[]).includes(propName)) {
+      acc.push(propName);
+    }
+    return acc;
+  }, new Array<string>());
+
+  if (specifiedExclusiveProps.length > 1) {
+    console.error(
+      `More than one exclusive prop was specified: ${specifiedExclusiveProps.join(
+        ", "
+      )} `
+    );
+  }
+}
+
+export type ButtonPurposeType = (typeof exclusiveProps)[number];
+
+export type ButtonExclusiveProps = {
+  [P in ButtonPurposeType]?: boolean;
+};
+
+export interface ButtonNonExclusiveProps {
+  outline?: boolean;
+  rounded?: boolean;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
+}
+
+export type ButtonPropsType = PropsWithChildren<
+  ButtonNonExclusiveProps & ButtonExclusiveProps & HTMLAttributes<HTMLElement>
+>;

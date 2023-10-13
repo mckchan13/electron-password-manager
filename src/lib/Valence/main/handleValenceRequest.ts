@@ -13,7 +13,7 @@ export function handleValenceRequest(
 ) {
   return function ipcMaininvokeValenceRequest<
     T extends RequestObject,
-    K extends ResponseObject
+    K extends ResponseObject,
   >(_event: IpcMainInvokeEvent, request: T): Promise<K> {
     const { port1, port2 } = new MessageChannelMain();
     const deferred = new Deferred<K, Error>();

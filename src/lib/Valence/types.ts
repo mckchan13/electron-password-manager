@@ -8,7 +8,7 @@ export type ElectronPorts = Electron.ParentPort | MessagePortMain;
 
 export type ValenceDatasources<
   T extends string | number | symbol = string,
-  K = unknown
+  K = unknown,
 > = Record<T, K>;
 
 export type ValenceExecutor = (ctx: ValenceContext) => void | Promise<void>;
@@ -73,7 +73,7 @@ export interface ValenceBuilder<T> {
 }
 
 export type RequestObject<T = unknown, K = string> = {
-  method: ValenceMethods
+  method: ValenceMethods;
   route: K;
   payload: T;
   channel: string;

@@ -20,7 +20,7 @@ function useValenceRequest<T = unknown>(
   route?: string,
   payload?: T
 ): ValenceRequestResult {
-  let request: RequestObject;
+  let request: RequestObject | ValenceMethods;
 
   assertValueIsNonNullish(
     methodOrRequestObject,
@@ -48,6 +48,7 @@ function useValenceRequest<T = unknown>(
     );
     assertValueIsNonNullish(channel, "Request channel is not defined.");
     assertValueIsNonNullish(route, "Request route is not defined.");
+
     request = {
       method: methodOrRequestObject,
       route,

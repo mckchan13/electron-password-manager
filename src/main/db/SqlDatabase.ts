@@ -127,7 +127,7 @@ export class SqlDatabase {
       }
     });
 
-    return encrypted
+    return encrypted;
   }
 
   public addMultiplePasswords(passwords: PasswordEntry[]): void {

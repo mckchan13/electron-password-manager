@@ -73,14 +73,15 @@ async function main(): Promise<void> {
     const {
       request: { payload },
     } = ctx;
-    const {
-      username,
-      password,
-      secret,
-    } = payload as SavePasswordPayload;
+    const { username, password, secret } = payload as SavePasswordPayload;
     const descriptor = "";
     const ds = ctx.datasources as { sql: SqlDatabase };
-    const encrypted = await ds.sql.savePassword(username, password, descriptor, secret);
+    const encrypted = await ds.sql.savePassword(
+      username,
+      password,
+      descriptor,
+      secret
+    );
     ctx.response.send(encrypted);
   });
 

@@ -12,16 +12,17 @@ export type ChildOptions = {
 
 class ValenceMain {
   private services = new Map<string, ValenceService>();
+  private renderers = new Map<string, BrowserWindow>();
   constructor(
-    // extends the vite config
     public mainConfig?: Record<string, unknown>,
     public childConfigs?: ChildOptions[],
     public rendererConfigs?: unknown[]
   ) {
-    if (childConfigs) {
+    const children = [];
+
+    if (childConfigs?.length) {
       for (const config of childConfigs) {
-        this.forkUtilityProcess(
-          config.serviceName,
+        const child = this.forkUtilityProcess(
           config.scriptPath,
           config.args,
           config.options
@@ -30,14 +31,12 @@ class ValenceMain {
     }
   }
 
-  public forkUtilityProcess(
-    serviceName: string,
+  public async forkUtilityProcess(
     scriptPath: string,
     args?: string[],
     options?: Electron.ForkOptions
-  ): void {
-    const child = utilityProcess.fork(scriptPath, args, options);
-    this.services.set(serviceName, child);
+  ): Promise<UtilityProcess> {
+    return utilityProcess.fork(scriptPath, args, options);
   }
 
   public async createMainWindow(): Promise<BrowserWindow> {

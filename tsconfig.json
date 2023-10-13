@@ -15,7 +15,7 @@
     "experimentalDecorators": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "isolatedModules": true,
+    "isolatedModules": true
   },
   "include": ["src/**/*"]
 }
